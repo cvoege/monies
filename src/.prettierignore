@@ -1,0 +1,5 @@
+# this should be the same as .gitignore
+/node_modules
+/tmp
+/.parcel-cache
+/dist
