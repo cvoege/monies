@@ -5,16 +5,28 @@ import { incomeTypeOptions, rateTypeOptions } from './modules/Income';
 import { actions, useSaved, useStore } from './modules/Store';
 
 const App = () => {
-  // const { state, setState, saved, clearState, downloadState } = useStore();
   const saved = useSaved();
-  const { incomes } = useStore((s) => ({ incomes: s.incomes }), []);
+  const { incomes, downloadStateLink } = useStore(
+    (s) => ({ incomes: s.incomes, downloadStateLink: s.downloadStateLink }),
+    [],
+  );
 
   return (
     <div>
       <p>
         {saved ? 'Saved' : 'Saving...'}
-        {/* <button onClick={clearState}>Clear Saved State</button>
-        <button onClick={downloadState}>Download State</button> */}
+        <button onClick={actions.clearState}>Clear Saved State</button>
+        <button onClick={actions.downloadState}>Download State</button>
+        {downloadStateLink && (
+          <a
+            href={downloadStateLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={`monies-${new Date().toLocaleString()}.json`}
+          >
+            Download
+          </a>
+        )}
       </p>
       <h1>Income</h1>
       {incomes.map((income) => {
@@ -65,5 +77,5 @@ if (rootElem) {
   const root = createRoot(rootElem);
   root.render(<App />);
 } else {
-  throw new Error('could not');
+  throw new Error('Could not find `root` element.');
 }

@@ -4,16 +4,18 @@ import { v4 as uuidv4 } from 'uuid';
 
 type State = {
   incomes: Array<Income>;
+  downloadStateLink: string | null;
 };
 
 const defaultState: State = {
   incomes: [],
+  downloadStateLink: null,
 };
 
 export const { useStore, useSaved, actions } = createStore({
   storageKey: 'monies',
   defaultState,
-  createActions: ({ get, set }) => {
+  createActions: ({ get, set, encode, getMemoryState }) => {
     return {
       createIncome: () => {
         set((state) => ({
@@ -48,6 +50,17 @@ export const { useStore, useSaved, actions } = createStore({
             ],
           }));
         },
+      clearState: () => {
+        set(() => defaultState);
+      },
+      downloadState: () => {
+        const data = encode(getMemoryState());
+        const blob = new Blob([data], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        set((s) => ({ ...s, downloadStateLink: url }));
+      },
     };
   },
 });

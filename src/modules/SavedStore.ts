@@ -34,6 +34,15 @@ const shallowEquals = <T>(obj1: T, obj2: T): boolean => {
     )
   );
 };
+type SavedState<State> = {
+  version: number;
+  state: State;
+};
+
+type MemoryState<State> = SavedState<State> & { saved: boolean };
+
+type Encode<State> = (value: MemoryState<State>) => string;
+type Decode<State> = (value: string) => MemoryState<State>;
 
 export const createStore = <State, Actions>({
   storageKey,
@@ -42,20 +51,19 @@ export const createStore = <State, Actions>({
 }: {
   storageKey: string;
   defaultState: State;
-  createActions: (opts: { get: () => State; set: (fn: (s: State) => State) => unknown }) => Actions;
+  createActions: (opts: {
+    get: () => State;
+    set: (fn: (s: State) => State) => unknown;
+    encode: Encode<State>;
+    decode: Decode<State>;
+    getMemoryState: () => MemoryState<State>;
+  }) => Actions;
 }) => {
-  type SavedState = {
-    version: number;
-    state: State;
-  };
-
-  type MemoryState = SavedState & { saved: boolean };
-
-  const encode = (value: MemoryState) =>
+  const encode: Encode<State> = (value) =>
     JSON.stringify({ state: value.state, version: CURRENT_MIGRATION_VERSION });
-  const decode = (value: string): SavedState => JSON.parse(value);
+  const decode: Decode<State> = (value) => JSON.parse(value);
 
-  const fetchSavedState = (): SavedState => {
+  const fetchSavedState = (): SavedState<State> => {
     const savedStateStr = localStorage.getItem(storageKey);
     const savedState = savedStateStr
       ? decode(savedStateStr)
@@ -64,7 +72,7 @@ export const createStore = <State, Actions>({
   };
 
   const initialSavedState = fetchSavedState();
-  let memoryState: MemoryState = {
+  let memoryState: MemoryState<State> = {
     ...initialSavedState,
     saved: true,
   };
@@ -100,40 +108,13 @@ export const createStore = <State, Actions>({
     setSavedState();
   };
 
-  const actions = createActions({ get: () => memoryState.state, set: setState });
-
-  const clearState = () => {
-    setState(() => defaultState);
-  };
-
-  const downloadState = () => {
-    const data = encode(memoryState);
-    const blob = new Blob([data], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-  };
-
-  const useFullStore = () => {
-    const [hookState, setHookState] = useState<MemoryState>(memoryState);
-    useEffect(() => {
-      const unsub = subscribe(() => {
-        setHookState(memoryState);
-      });
-      return () => {
-        unsub();
-      };
-    }, []);
-
-    return {
-      state: hookState.state,
-      saved: hookState.saved,
-      setState,
-      clearState,
-      downloadState,
-    };
-  };
+  const actions = createActions({
+    get: () => memoryState.state,
+    set: setState,
+    encode,
+    decode,
+    getMemoryState: () => memoryState,
+  });
 
   const useStore = <SelectedState>(
     selector: (currentState: State) => SelectedState,
@@ -191,5 +172,5 @@ export const createStore = <State, Actions>({
 
     return hookSaved;
   };
-  return { useStore, useFullStore, useSaved, actions };
+  return { useStore, useSaved, actions };
 };
