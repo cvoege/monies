@@ -1,6 +1,7 @@
 import { ImmutableList } from './Immutable';
 
 export type Income = {
+  id: string;
   name: string;
   rateType: 'hourly' | 'annual' | 'monthly';
   incomeType:

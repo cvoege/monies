@@ -1,34 +1,27 @@
-import { render } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { NumberInput, TextInput } from './components/Input';
 import { SelectInput } from './components/SelectInput';
-import { Income, incomeTypeOptions, rateTypeOptions } from './modules/Income';
-import { useStore } from './modules/Store';
+import { incomeTypeOptions, rateTypeOptions } from './modules/Income';
+import { actions, useSaved, useStore } from './modules/Store';
 
 const App = () => {
-  const { state, setState, saved, clearState, downloadState } = useStore();
+  // const { state, setState, saved, clearState, downloadState } = useStore();
+  const saved = useSaved();
+  const { incomes } = useStore((s) => ({ incomes: s.incomes }), []);
 
   return (
     <div>
       <p>
         {saved ? 'Saved' : 'Saving...'}
-        <button onClick={clearState}>Clear Saved State</button>
-        <button onClick={downloadState}>Download State</button>
+        {/* <button onClick={clearState}>Clear Saved State</button>
+        <button onClick={downloadState}>Download State</button> */}
       </p>
       <h1>Income</h1>
-      {state.incomes.map((income, i) => {
-        const setIncome =
-          <K extends keyof Income>(key: K) =>
-          (value: Income[K]) =>
-            setState({
-              ...state,
-              incomes: [
-                ...state.incomes.slice(0, i),
-                { ...income, [key]: value },
-                ...state.incomes.slice(i + 1),
-              ],
-            });
+      {incomes.map((income) => {
+        const setIncome = actions.setIncome(income.id);
+
         return (
-          <div style={{ border: '1px solid black' }}>
+          <div style={{ border: '1px solid black' }} key={income.id}>
             {income.name}
             <div>
               Name: <TextInput value={income.name} onChange={setIncome('name')} />
@@ -62,27 +55,15 @@ const App = () => {
           </div>
         );
       })}
-      <button
-        onClick={() =>
-          setState({
-            ...state,
-            incomes: [
-              ...state.incomes,
-              {
-                name: '',
-                rateType: 'annual',
-                incomeType: 'w2',
-                rate: 0,
-                retirementMatchPercentage: 0,
-              },
-            ],
-          })
-        }
-      >
-        Add Income
-      </button>
+      <button onClick={actions.createIncome}>Add Income</button>
     </div>
   );
 };
 
-render(<App />, document.getElementById('root'));
+const rootElem = document.getElementById('root');
+if (rootElem) {
+  const root = createRoot(rootElem);
+  root.render(<App />);
+} else {
+  throw new Error('could not');
+}
