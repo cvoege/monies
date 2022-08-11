@@ -1,5 +1,4 @@
 import { ChangeEventHandler, useCallback } from 'react';
-import { ImmutableList } from '../modules/Immutable';
 
 export type SelectOption<T> = {
   value: T;
@@ -17,7 +16,7 @@ type SelectInputProps<T> = {
   /** Event handler for change event */
   onChange: (newValue: T, evt: React.ChangeEvent<HTMLSelectElement>) => void;
   /** Options */
-  options: ImmutableList<SelectOption<T>>;
+  options: Array<SelectOption<T>>;
   title?: string;
 };
 
@@ -29,7 +28,7 @@ export function SelectInput<T extends string | number | string[] | undefined>({
 }: SelectInputProps<T>) {
   const realOnChange = useCallback(
     (event: Parameters<ChangeEventHandler<HTMLSelectElement>>[0]) => {
-      const option = options.get(event.target.selectedIndex);
+      const option = options[event.target.selectedIndex];
       if (!option) return;
       onChange(option.value, event);
     },

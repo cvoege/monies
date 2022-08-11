@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { debounce } from 'lodash';
 
 const SAVE_DEBOUNCE_BUFFER = 200;
-const CURRENT_MIGRATION_VERSION = 0;
 
 const shallowEquals = <T>(obj1: T, obj2: T): boolean => {
   if (
@@ -34,40 +33,54 @@ const shallowEquals = <T>(obj1: T, obj2: T): boolean => {
     )
   );
 };
+
 type SavedState<State> = {
   version: number;
   state: State;
 };
 
+type EncodedSavedState = {
+  version: number;
+  state: string;
+};
+
 type MemoryState<State> = SavedState<State> & { saved: boolean };
 
-type Encode<State> = (value: MemoryState<State>) => string;
-type Decode<State> = (value: string) => MemoryState<State>;
+export type Encode<State> = (value: State) => string;
+export type Decode<State> = (value: string, version: number) => State;
 
 export const createStore = <State, Actions>({
   storageKey,
   defaultState,
   createActions,
+  encode,
+  decode,
+  currentVersion,
 }: {
   storageKey: string;
   defaultState: State;
+  encode: Encode<State>;
+  decode: Decode<State>;
+  currentVersion: number;
   createActions: (opts: {
     get: () => State;
     set: (fn: (s: State) => State) => unknown;
-    encode: Encode<State>;
-    decode: Decode<State>;
     getMemoryState: () => MemoryState<State>;
+    encodeMemoryState: (ms: MemoryState<State>) => string;
   }) => Actions;
 }) => {
-  const encode: Encode<State> = (value) =>
-    JSON.stringify({ state: value.state, version: CURRENT_MIGRATION_VERSION });
-  const decode: Decode<State> = (value) => JSON.parse(value);
-
+  const defaultSavedState = { state: defaultState, version: currentVersion };
   const fetchSavedState = (): SavedState<State> => {
-    const savedStateStr = localStorage.getItem(storageKey);
-    const savedState = savedStateStr
-      ? decode(savedStateStr)
-      : { state: defaultState, version: CURRENT_MIGRATION_VERSION };
+    const encoededSavedStateStr = localStorage.getItem(storageKey);
+    if (!encoededSavedStateStr) return defaultSavedState;
+    const encodedSavedState: EncodedSavedState = JSON.parse(encoededSavedStateStr);
+    // Keep backups of the last versions of previous versions for bugfixing broken migrations
+    localStorage.setItem(`${storageKey}-${encodedSavedState.version}`, encoededSavedStateStr);
+    const savedState: SavedState<State> = {
+      version: currentVersion,
+      state: decode(encodedSavedState.state, encodedSavedState.version),
+    };
+
     return savedState;
   };
 
@@ -95,8 +108,15 @@ export const createStore = <State, Actions>({
     };
   };
 
+  const encodeMemoryState = (ms: MemoryState<State>) => {
+    return JSON.stringify({
+      state: encode(ms.state),
+      version: ms.version,
+    });
+  };
+
   const setSavedState = debounce(() => {
-    localStorage.setItem(storageKey, encode(memoryState));
+    localStorage.setItem(storageKey, encodeMemoryState(memoryState));
     memoryState = { ...memoryState, saved: true };
     onSaveListeners.forEach((listener) => listener());
   }, SAVE_DEBOUNCE_BUFFER);
@@ -111,9 +131,8 @@ export const createStore = <State, Actions>({
   const actions = createActions({
     get: () => memoryState.state,
     set: setState,
-    encode,
-    decode,
     getMemoryState: () => memoryState,
+    encodeMemoryState,
   });
 
   const useStore = <SelectedState>(

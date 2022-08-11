@@ -1,36 +1,48 @@
-import { Income } from './Income';
-import { createStore } from './SavedStore';
-import { v4 as uuidv4 } from 'uuid';
+import { defaultIncome, Income } from './Income';
+import { createStore, Decode, Encode } from './SavedStore';
+import { defaultPerson, Person } from './Person';
 
 type State = {
+  people: [Person] | [Person, Person];
   incomes: Array<Income>;
   downloadStateLink: string | null;
 };
 
 const defaultState: State = {
+  people: [defaultPerson()],
   incomes: [],
   downloadStateLink: null,
+};
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Migration = { migrate: (previousState: any) => any };
+
+const migrations: Array<Migration> = [];
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const CURRENT_STATE_VERSION = migrations.length;
+
+const encode: Encode<State> = (value) => JSON.stringify(value);
+const decode: Decode<State> = (value, version) => {
+  const base = JSON.parse(value);
+  const migrated = migrations
+    .slice(version)
+    .reduce((acc, migration) => migration.migrate(acc), base);
+  return migrated;
 };
 
 export const { useStore, useSaved, actions } = createStore({
   storageKey: 'monies',
   defaultState,
-  createActions: ({ get, set, encode, getMemoryState }) => {
+  encode,
+  decode,
+  currentVersion: CURRENT_STATE_VERSION,
+  createActions: ({ get, set, getMemoryState, encodeMemoryState }) => {
     return {
       createIncome: () => {
         set((state) => ({
           ...state,
-          incomes: [
-            ...state.incomes,
-            {
-              id: uuidv4(),
-              name: '',
-              rateType: 'annual',
-              incomeType: 'w2',
-              rate: 0,
-              retirementMatchPercentage: 0,
-            },
-          ],
+          incomes: [...state.incomes, defaultIncome(state.people[0].id)],
         }));
       },
       setIncome:
@@ -50,11 +62,42 @@ export const { useStore, useSaved, actions } = createStore({
             ],
           }));
         },
+      switchPersonSetting: () => {
+        const { people } = get();
+        if (people.length === 1) {
+          set((state) => ({
+            ...state,
+            people: [people[0], defaultPerson()],
+          }));
+        } else {
+          set((state) => ({
+            ...state,
+            people: [people[0]],
+          }));
+        }
+      },
+      setPerson:
+        (id: Person['id']) =>
+        <K extends keyof Person>(key: K) =>
+        (value: Person[K]) => {
+          const { people } = get();
+          const personIndex = people.findIndex((person) => person.id === id);
+          const result: typeof people = [
+            personIndex === 0 ? { ...people[0], [key]: value } : people[0],
+          ];
+          if (people.length === 2)
+            result.push(personIndex === 1 ? { ...people[1], [key]: value } : people[1]);
+
+          set((state) => ({
+            ...state,
+            people: result,
+          }));
+        },
       clearState: () => {
         set(() => defaultState);
       },
       downloadState: () => {
-        const data = encode(getMemoryState());
+        const data = encodeMemoryState(getMemoryState());
         const blob = new Blob([data], {
           type: 'application/json',
         });
