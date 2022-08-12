@@ -6,12 +6,24 @@ type State = {
   people: [Person] | [Person, Person];
   incomes: Array<Income>;
   downloadStateLink: string | null;
+  rothIraContribution: number | null;
+  traditionalIraContribution: number | null;
+  iraContributionType: 'mixed' | 'max-roth' | 'max-traditional';
+  roth401kContribution: number | null;
+  traditional401kContribution: number | null;
+  my401kContributionType: 'mixed' | 'max-roth' | 'max-traditional';
 };
 
 const defaultState: State = {
   people: [defaultPerson()],
   incomes: [],
   downloadStateLink: null,
+  rothIraContribution: 0,
+  traditionalIraContribution: 0,
+  iraContributionType: 'mixed',
+  roth401kContribution: 0,
+  traditional401kContribution: 0,
+  my401kContributionType: 'mixed',
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -51,13 +63,17 @@ export const { useStore, useSaved, actions } = createStore({
         (value: Income[K]) => {
           const incomeIndex = get().incomes.findIndex((income) => income.id === id);
           const income = get().incomes[incomeIndex];
+          const updates =
+            key === 'rateType' && value === 'hourly'
+              ? { rateType: 'hourly' as const, hoursPerWeek: 0 }
+              : { [key]: value };
           if (!income) return;
 
           set((state) => ({
             ...state,
             incomes: [
               ...state.incomes.slice(0, incomeIndex),
-              { ...income, [key]: value },
+              { ...income, ...updates },
               ...state.incomes.slice(incomeIndex + 1),
             ],
           }));
@@ -104,6 +120,11 @@ export const { useStore, useSaved, actions } = createStore({
         const url = URL.createObjectURL(blob);
         set((s) => ({ ...s, downloadStateLink: url }));
       },
+      setField:
+        <K extends keyof State>(key: K) =>
+        (value: State[K]) => {
+          set((s) => ({ ...s, [key]: value }));
+        },
     };
   },
 });

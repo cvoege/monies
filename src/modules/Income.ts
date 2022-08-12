@@ -4,14 +4,15 @@ export type Income = {
   id: string;
   name: string;
   personId: string;
-  rateType: 'hourly' | 'annual' | 'monthly';
   incomeType:
     | 'w2' // Fully taxable, subject to automatic withholdings, FICA, etc, example: your job
     | 'self-employment' // Self employment, requires manual withholdings, self employment taxes, FICA, example: contract work
     | 'non-fica'; // requires manual withholdings but no FICA, example: rent, dividends
   rate: number | null;
+  hoursPerWeek: number | null;
   traditionalRetirementMatchPercentage: number | null;
   rothRetirementMatchPercentage: number | null;
+  rateType: 'hourly' | 'annual' | 'monthly';
 };
 
 export const rateTypeOptions: Array<{ label: string; value: Income['rateType'] }> = [
@@ -33,7 +34,37 @@ export const defaultIncome = (personId: string): Income => {
     rateType: 'annual',
     incomeType: 'w2',
     rate: 0,
+    hoursPerWeek: null,
     rothRetirementMatchPercentage: 0,
     traditionalRetirementMatchPercentage: 0,
   };
+};
+
+export const totalTaxableIncomePerYear = (income: Income): number => {
+  const rate = income.rate || 0;
+  if (income.rateType === 'annual') {
+    return rate;
+  } else if (income.rateType === 'monthly') {
+    return rate * 12;
+  } else if (income.rateType === 'hourly') {
+    return rate * (income.hoursPerWeek || 0) * 46;
+  } else {
+    throw new Error('Unrecognized rate type');
+  }
+};
+
+export const totalCompanyContributionPerYear = (income: Income): number => {
+  const taxable = totalTaxableIncomePerYear(income);
+  const companyContribution =
+    (((income.rothRetirementMatchPercentage || 0) +
+      (income.traditionalRetirementMatchPercentage || 0)) /
+      100) *
+    taxable;
+  return companyContribution;
+};
+
+export const totalIncomePerYear = (income: Income): number => {
+  const taxable = totalTaxableIncomePerYear(income);
+  const companyContribution = totalCompanyContributionPerYear(income);
+  return taxable + companyContribution;
 };

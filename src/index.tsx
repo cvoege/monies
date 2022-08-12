@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { actions, useSaved, useStore } from './modules/Store';
 import { IncomeZone } from './pages/IncomeZone';
 import { PeopleZone } from './pages/PeopleZone';
+import { RetirementAccountZone } from './pages/RetirementAccountZone';
 import { TaxZone } from './pages/TaxZone';
 
 const App = () => {
@@ -27,6 +28,7 @@ const App = () => {
       </p>
       <PeopleZone />
       <IncomeZone />
+      <RetirementAccountZone />
       <TaxZone />
     </div>
   );
