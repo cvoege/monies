@@ -4,21 +4,21 @@ import { SelectInput } from '../components/SelectInput';
 import {
   incomeTypeOptions,
   rateTypeOptions,
-  totalIncomePerYear,
-  totalTaxableIncomePerYear,
-  totalCompanyContributionPerYear,
+  getTotalIncome,
+  getTaxableIncome,
+  getCompanyContribution,
+  getCombinedTaxableIncome,
+  getCombinedCompanyContribution,
+  getCombinedTotalIncome,
 } from '../modules/Income';
 import { formatDollars } from '../modules/String';
 
 export const IncomeZone = () => {
   const { incomes, people } = useStore((s) => ({ incomes: s.incomes, people: s.people }), []);
 
-  const totalTaxable = incomes.reduce((acc, income) => acc + totalTaxableIncomePerYear(income), 0);
-  const totalCompanyContribution = incomes.reduce(
-    (acc, income) => acc + totalCompanyContributionPerYear(income),
-    0,
-  );
-  const totalIncome = incomes.reduce((acc, income) => acc + totalIncomePerYear(income), 0);
+  const totalTaxable = getCombinedTaxableIncome(incomes);
+  const totalCompanyContribution = getCombinedCompanyContribution(incomes);
+  const totalIncome = getCombinedTotalIncome(incomes);
 
   return (
     <div>
@@ -82,9 +82,9 @@ export const IncomeZone = () => {
                 onChange={setIncome('traditionalRetirementMatchPercentage')}
               />
             </div>
-            <p>Taxable Income: {formatDollars(totalTaxableIncomePerYear(income))}</p>
-            <p>Company Contribution: {formatDollars(totalCompanyContributionPerYear(income))}</p>
-            <p>Total: {formatDollars(totalIncomePerYear(income))}</p>
+            <p>Taxable Income: {formatDollars(getTaxableIncome(income))}</p>
+            <p>Company Contribution: {formatDollars(getCompanyContribution(income))}</p>
+            <p>Total: {formatDollars(getTotalIncome(income))}</p>
           </div>
         );
       })}

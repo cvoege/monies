@@ -14,17 +14,7 @@ export const RetirementAccountZone = () => {
     traditionalIraContribution,
     iraContributionType,
     my401kContributionType,
-  } = useStore(
-    (s) => ({
-      roth401kContribution: s.roth401kContribution,
-      rothIraContribution: s.rothIraContribution,
-      traditional401kContribution: s.traditional401kContribution,
-      traditionalIraContribution: s.traditionalIraContribution,
-      iraContributionType: s.iraContributionType,
-      my401kContributionType: s.my401kContributionType,
-    }),
-    [],
-  );
+  } = useStore((s) => s.retirementAccountInfo, []);
 
   return (
     <div>
@@ -32,7 +22,7 @@ export const RetirementAccountZone = () => {
       IRA Contribution Setting:{' '}
       <SelectInput
         value={iraContributionType}
-        onChange={actions.setField('iraContributionType')}
+        onChange={actions.setRetirementInfoField('iraContributionType')}
         options={[
           { value: 'mixed', label: 'Custom' },
           { value: 'max-roth', label: 'Max Roth' },
@@ -45,7 +35,7 @@ export const RetirementAccountZone = () => {
             Roth IRA Contribution:{' '}
             <NumberInput
               value={rothIraContribution}
-              onChange={actions.setField('rothIraContribution')}
+              onChange={actions.setRetirementInfoField('rothIraContribution')}
               min={0}
               max={MAX_IRA_CONTRIBUTION - (traditionalIraContribution || 0)}
             />
@@ -54,7 +44,7 @@ export const RetirementAccountZone = () => {
             Traditional IRA Contribution:{' '}
             <NumberInput
               value={traditionalIraContribution}
-              onChange={actions.setField('traditionalIraContribution')}
+              onChange={actions.setRetirementInfoField('traditionalIraContribution')}
               min={0}
               max={MAX_IRA_CONTRIBUTION - (rothIraContribution || 0)}
             />
@@ -65,7 +55,7 @@ export const RetirementAccountZone = () => {
       401k Contribution Setting:{' '}
       <SelectInput
         value={my401kContributionType}
-        onChange={actions.setField('my401kContributionType')}
+        onChange={actions.setRetirementInfoField('my401kContributionType')}
         options={[
           { value: 'mixed', label: 'Custom' },
           { value: 'max-roth', label: 'Max Roth' },
@@ -80,7 +70,7 @@ export const RetirementAccountZone = () => {
               value={roth401kContribution}
               min={0}
               max={MAX_INDIVIDUAL_401K_CONTRIBUTION - (traditional401kContribution || 0)}
-              onChange={actions.setField('roth401kContribution')}
+              onChange={actions.setRetirementInfoField('roth401kContribution')}
             />
           </div>
           <div>
@@ -89,7 +79,7 @@ export const RetirementAccountZone = () => {
               value={traditional401kContribution}
               min={0}
               max={MAX_INDIVIDUAL_401K_CONTRIBUTION - (roth401kContribution || 0)}
-              onChange={actions.setField('traditional401kContribution')}
+              onChange={actions.setRetirementInfoField('traditional401kContribution')}
             />
           </div>
         </>

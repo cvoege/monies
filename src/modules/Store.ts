@@ -1,29 +1,20 @@
 import { defaultIncome, Income } from './Income';
 import { createStore, Decode, Encode } from './SavedStore';
 import { defaultPerson, Person } from './Person';
+import { defaultRetirementAccountInfo, RetirementAccountInfo } from './RetirementAccount';
 
 type State = {
+  downloadStateLink: string | null;
   people: [Person] | [Person, Person];
   incomes: Array<Income>;
-  downloadStateLink: string | null;
-  rothIraContribution: number | null;
-  traditionalIraContribution: number | null;
-  iraContributionType: 'mixed' | 'max-roth' | 'max-traditional';
-  roth401kContribution: number | null;
-  traditional401kContribution: number | null;
-  my401kContributionType: 'mixed' | 'max-roth' | 'max-traditional';
+  retirementAccountInfo: RetirementAccountInfo;
 };
 
 const defaultState: State = {
   people: [defaultPerson()],
   incomes: [],
   downloadStateLink: null,
-  rothIraContribution: 0,
-  traditionalIraContribution: 0,
-  iraContributionType: 'mixed',
-  roth401kContribution: 0,
-  traditional401kContribution: 0,
-  my401kContributionType: 'mixed',
+  retirementAccountInfo: defaultRetirementAccountInfo(),
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -124,6 +115,14 @@ export const { useStore, useSaved, actions } = createStore({
         <K extends keyof State>(key: K) =>
         (value: State[K]) => {
           set((s) => ({ ...s, [key]: value }));
+        },
+      setRetirementInfoField:
+        <K extends keyof RetirementAccountInfo>(key: K) =>
+        (value: RetirementAccountInfo[K]) => {
+          set((s) => ({
+            ...s,
+            retirementAccountInfo: { ...s.retirementAccountInfo, [key]: value },
+          }));
         },
     };
   },

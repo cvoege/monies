@@ -40,21 +40,23 @@ export const defaultIncome = (personId: string): Income => {
   };
 };
 
-export const totalTaxableIncomePerYear = (income: Income): number => {
+export const WORKING_WEEKS_PER_YEAR = 46;
+
+export const getTaxableIncome = (income: Income): number => {
   const rate = income.rate || 0;
   if (income.rateType === 'annual') {
     return rate;
   } else if (income.rateType === 'monthly') {
     return rate * 12;
   } else if (income.rateType === 'hourly') {
-    return rate * (income.hoursPerWeek || 0) * 46;
+    return rate * (income.hoursPerWeek || 0) * WORKING_WEEKS_PER_YEAR;
   } else {
     throw new Error('Unrecognized rate type');
   }
 };
 
-export const totalCompanyContributionPerYear = (income: Income): number => {
-  const taxable = totalTaxableIncomePerYear(income);
+export const getCompanyContribution = (income: Income): number => {
+  const taxable = getTaxableIncome(income);
   const companyContribution =
     (((income.rothRetirementMatchPercentage || 0) +
       (income.traditionalRetirementMatchPercentage || 0)) /
@@ -63,8 +65,20 @@ export const totalCompanyContributionPerYear = (income: Income): number => {
   return companyContribution;
 };
 
-export const totalIncomePerYear = (income: Income): number => {
-  const taxable = totalTaxableIncomePerYear(income);
-  const companyContribution = totalCompanyContributionPerYear(income);
+export const getTotalIncome = (income: Income): number => {
+  const taxable = getTaxableIncome(income);
+  const companyContribution = getCompanyContribution(income);
   return taxable + companyContribution;
+};
+
+export const getCombinedTaxableIncome = (incomes: Income[]): number => {
+  return incomes.reduce((acc, income) => acc + getTaxableIncome(income), 0);
+};
+
+export const getCombinedCompanyContribution = (incomes: Income[]): number => {
+  return incomes.reduce((acc, income) => acc + getCompanyContribution(income), 0);
+};
+
+export const getCombinedTotalIncome = (incomes: Income[]): number => {
+  return incomes.reduce((acc, income) => acc + getTotalIncome(income), 0);
 };
