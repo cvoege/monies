@@ -45,6 +45,14 @@ export const TaxZone = () => {
 
   const totalTaxable = getCombinedTaxableIncome(incomes);
 
+  const totalW2Income = getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'w2'));
+  const totalSelfEmploymentIncome = getCombinedTaxableIncome(
+    incomes.filter((i) => i.incomeType === 'self-employment'),
+  );
+  const totalNonFicaINcome = getCombinedTaxableIncome(
+    incomes.filter((i) => i.incomeType === 'non-fica'),
+  );
+
   const traditionalDeduction: TaxDeduction = {
     id: 'traditional-accounts',
     name: 'Traditional Accounts',
@@ -70,6 +78,18 @@ export const TaxZone = () => {
     taxDetails,
     taxableAfterDeductions,
   );
+
+  const totalPayrollTaxesPaid = taxSystem.payrollTaxes.reduce(
+    (acc, cur) =>
+      getPayrollTaxDetails({ payrollTax: cur, incomes, filingStatus, people }).taxesPaid + acc,
+    0,
+  );
+
+  const stateDeduction = taxSystem.stateTaxSystem.deductionPerPerson * people.length;
+  const stateTaxable = totalTaxable - stateDeduction;
+  const stateTaxesPaid = stateTaxable * (taxSystem.stateTaxSystem.percentageRate / 100);
+
+  const countyTaxesPaid = totalTaxable * (taxSystem.countyTaxSystem.percentageRate / 100);
 
   return (
     <div>
@@ -130,12 +150,9 @@ export const TaxZone = () => {
       <p>Total Federal Income Taxes Paid: {formatDollars(totalFederalIncomeTaxesPaid)}</p>
       <p>Monthly Federal Income Taxes Paid: {formatDollars(totalFederalIncomeTaxesPaid / 12)}</p>
       <h1>Payroll Taxes</h1>
-      {/* <p>Income Subject to Standard FICA Taxes: {formatDollars(totalW2Income)}</p>
-      <p>
-        Income Subject to Double FICA Taxes (Paying as both Employee and Employer):{' '}
-        {formatDollars(totalSelfEmploymentIncome)}
-      </p>
-      <p>Income Subject to No FICA Taxes: {formatDollars(totalNonFicaINcome)}</p> */}
+      <p>W2 Income: {formatDollars(totalW2Income)}</p>
+      <p>Self Employment Income: {formatDollars(totalSelfEmploymentIncome)}</p>
+      <p>Income Subject to No FICA Taxes: {formatDollars(totalNonFicaINcome)}</p>
       <Table>
         <TableHead>
           <TableRow>
@@ -166,6 +183,53 @@ export const TaxZone = () => {
               </TableRow>
             );
           })}
+        </TableBody>
+      </Table>
+      <p>Total Payroll Taxes Paid: {formatDollars(totalPayrollTaxesPaid)}</p>
+      <h1>State Taxes</h1>
+      <p>State Deduction: {formatDollars(stateDeduction)}</p>
+      <p>Taxable Income for State: {formatDollars(stateTaxable)}</p>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Rate</TableHeader>
+            <TableHeader>Income Range</TableHeader>
+            <TableHeader>Amount Taxed at Rate</TableHeader>
+            <TableHeader>Taxes Paid</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableEntry>Indiana State Taxes</TableEntry>
+            <TableEntry>{formatPercentage(taxSystem.stateTaxSystem.percentageRate)}</TableEntry>
+            <TableEntry>{formatDollars(stateDeduction)}+</TableEntry>
+            <TableEntry>{formatDollars(stateTaxable)}</TableEntry>
+            <TableEntry>{formatDollars(stateTaxesPaid)}</TableEntry>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <h1>County Taxes</h1>
+      <p>County Deduction: {formatDollars(0)}</p>
+      <p>Taxable Income for County: {formatDollars(totalTaxable)}</p>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Rate</TableHeader>
+            <TableHeader>Income Range</TableHeader>
+            <TableHeader>Amount Taxed at Rate</TableHeader>
+            <TableHeader>Taxes Paid</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableEntry>Marion County Taxes</TableEntry>
+            <TableEntry>{formatPercentage(taxSystem.countyTaxSystem.percentageRate)}</TableEntry>
+            <TableEntry>{formatDollars(0)}+</TableEntry>
+            <TableEntry>{formatDollars(totalTaxable)}</TableEntry>
+            <TableEntry>{formatDollars(countyTaxesPaid)}</TableEntry>
+          </TableRow>
         </TableBody>
       </Table>
     </div>

@@ -51,10 +51,26 @@ export type TaxDetails = {
   capitalGainsBrackets: Array<CapitalGainsTaxBracket>;
 };
 
+// TODO: other types of state taxes (with brackets and different types of deductions)
+// TODO: allow them to list dependents and figure out all the credits and stuff
+// (also affects the indiana taxes deductions per person)
+export type StateTaxSystem = {
+  type: 'flat';
+  percentageRate: number;
+  deductionPerPerson: number;
+};
+
+export type CountyTaxSystem = {
+  type: 'flat';
+  percentageRate: number;
+};
+
 export type TaxSystem = {
   single: TaxDetails;
   joint: TaxDetails;
   payrollTaxes: Array<PayrollTax>;
+  stateTaxSystem: StateTaxSystem;
+  countyTaxSystem: CountyTaxSystem;
 };
 
 type ProgressiveDeduction = TaxDeduction & {

@@ -193,4 +193,13 @@ export const US_STANDARD_TAX_SYSTEM: TaxSystem = {
       minimumTaxableAmountJoint: 250000,
     },
   ],
+  stateTaxSystem: {
+    type: 'flat',
+    percentageRate: 3.23,
+    deductionPerPerson: 1000,
+  },
+  countyTaxSystem: {
+    type: 'flat',
+    percentageRate: 2.02,
+  },
 };
