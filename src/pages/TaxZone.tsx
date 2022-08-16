@@ -18,6 +18,8 @@ import {
   getBracketTaxesPaid,
   getTotalFederalIncomeTaxesPaid,
   getPayrollTaxDetails,
+  getCombinedTotalIncome,
+  getCombinedCompanyContribution,
 } from 'src/modules/Income';
 
 export const TaxZone = () => {
@@ -43,6 +45,8 @@ export const TaxZone = () => {
   const maxes = retirementContributionMaxes[filingStatus];
   const taxDetails = taxSystem[filingStatus];
 
+  const totalIncome = getCombinedTotalIncome(incomes);
+  const totalDirectIncome = totalIncome - getCombinedCompanyContribution(incomes);
   const totalTaxable = getCombinedTaxableIncome(incomes);
 
   const totalW2Income = getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'w2'));
@@ -90,6 +94,18 @@ export const TaxZone = () => {
   const stateTaxesPaid = stateTaxable * (taxSystem.stateTaxSystem.percentageRate / 100);
 
   const countyTaxesPaid = totalTaxable * (taxSystem.countyTaxSystem.percentageRate / 100);
+
+  const totalTaxes =
+    totalFederalIncomeTaxesPaid + totalPayrollTaxesPaid + stateTaxesPaid + countyTaxesPaid;
+
+  const totalAfterTaxIncomeDirect = totalTaxable - totalTaxes;
+  const totalAfterTaxIncome = totalIncome - totalTaxes;
+
+  const topMarginalTaxBracket =
+    taxDetails.incomeBrackets
+      .reverse()
+      .find((bracket) => getBracketTaxableAmount(bracket, taxableAfterDeductions) > 0) ||
+    taxDetails.incomeBrackets[0];
 
   // TODO: Estimate additional witholdings per paycheck
   // TODO: Estimate total witholdings per paycheck so you can compare and see if the witholdings are accurate
@@ -236,6 +252,28 @@ export const TaxZone = () => {
           </TableRow>
         </TableBody>
       </Table>
+      <h1>Tax Summary</h1>
+      <p>Total Annual Taxes: {formatDollars(totalTaxes)}</p>
+      <p>Total Monthly Taxes: {formatDollars(totalTaxes / 12)}</p>
+      <p>
+        Total Annual After Tax Income (not including company retirement contributions):{' '}
+        {formatDollars(totalAfterTaxIncomeDirect)}
+      </p>
+      <p>
+        Total Monthly After Tax Income (not including company retirement contributions):{' '}
+        {formatDollars(totalAfterTaxIncomeDirect / 12)}
+      </p>
+      <p>Total Annual After Tax Income: {formatDollars(totalAfterTaxIncome)}</p>
+      <p>Total Monthly After Tax Income: {formatDollars(totalAfterTaxIncome / 12)}</p>
+      <p>
+        Top Marginal Federal Tax Rate:{' '}
+        {formatPercentage(topMarginalTaxBracket?.percentageRate || 0)}
+      </p>
+      <p>
+        Effective Tax Rate (not including company retirement contributions):{' '}
+        {formatPercentage(100 * (totalTaxes / totalDirectIncome))}
+      </p>
+      <p>Effective Tax Rate: {formatPercentage(100 * (totalTaxes / totalIncome))}</p>
     </div>
   );
 };
