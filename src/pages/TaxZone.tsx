@@ -2,10 +2,7 @@ import { formatDollars, formatPercentage } from '../modules/String';
 import { useStore } from '../modules/Store';
 import { getProgressiveDeductions, TaxDeduction } from '../modules/Tax';
 import { US_STANDARD_TAX_SYSTEM } from '../modules/USTaxSystem';
-import {
-  MAX_INDIVIDUAL_401K_CONTRIBUTION,
-  MAX_IRA_CONTRIBUTION,
-} from '../modules/RetirementAccount';
+import { retirementContributionMaxes } from '../modules/RetirementAccount';
 import {
   Table,
   TableBody,
@@ -14,12 +11,21 @@ import {
   TableHeader,
   TableRow,
 } from 'src/components/Table';
-import { getCombinedTaxableIncome } from 'src/modules/Income';
+import {
+  getCombinedTaxableIncome,
+  formatPayrollTaxIncomeRange,
+  getBracketTaxableAmount,
+  getBracketTaxesPaid,
+  getTotalFederalIncomeTaxesPaid,
+  getPayrollTaxDetails,
+} from 'src/modules/Income';
 
 export const TaxZone = () => {
   const {
     people,
     incomes,
+    hsaContribution,
+    hsaContributionType,
     traditional401kContribution,
     traditionalIraContribution,
     iraContributionType,
@@ -34,6 +40,7 @@ export const TaxZone = () => {
   );
   const taxSystem = US_STANDARD_TAX_SYSTEM;
   const filingStatus = people.length === 1 ? 'single' : 'joint';
+  const maxes = retirementContributionMaxes[filingStatus];
   const taxDetails = taxSystem[filingStatus];
 
   const totalTaxable = getCombinedTaxableIncome(incomes);
@@ -42,11 +49,10 @@ export const TaxZone = () => {
     id: 'traditional-accounts',
     name: 'Traditional Accounts',
     amount:
-      (iraContributionType === 'max-traditional'
-        ? MAX_IRA_CONTRIBUTION
-        : traditionalIraContribution || 0) +
+      (hsaContributionType === 'max' ? maxes.hsa : hsaContribution || 0) +
+      (iraContributionType === 'max-traditional' ? maxes.ira : traditionalIraContribution || 0) +
       (my401kContributionType === 'max-traditional'
-        ? MAX_INDIVIDUAL_401K_CONTRIBUTION
+        ? maxes.individual401k
         : traditional401kContribution || 0),
   };
 
@@ -55,9 +61,15 @@ export const TaxZone = () => {
   const totalDeductionValue = deductions.reduce((acc, deduction) => acc + deduction.amount, 0);
   const progressiveDeductions = getProgressiveDeductions({ totalTaxable, deductions });
 
-  const taxableAfterDeductions = progressiveDeductions[0]
-    ? progressiveDeductions[0].incomeAfter
-    : totalTaxable;
+  const taxableAfterDeductions =
+    progressiveDeductions.length > 0
+      ? progressiveDeductions[progressiveDeductions.length - 1]?.incomeAfter || totalTaxable
+      : totalTaxable;
+
+  const totalFederalIncomeTaxesPaid = getTotalFederalIncomeTaxesPaid(
+    taxDetails,
+    taxableAfterDeductions,
+  );
 
   return (
     <div>
@@ -72,7 +84,8 @@ export const TaxZone = () => {
         );
       })}
       <p>Total Deductions: {formatDollars(totalDeductionValue)}</p>
-      <h1>Income Taxes</h1>
+      <p>Taxable Income After Deductions: {formatDollars(taxableAfterDeductions)}</p>
+      <h1>Federal Income Taxes</h1>
       <Table>
         <TableHead>
           <TableRow>
@@ -96,11 +109,9 @@ export const TaxZone = () => {
             );
           })}
           {taxDetails.incomeBrackets.map((bracket) => {
-            const taxableInThisBracket =
-              taxableAfterDeductions >= bracket.startTaxAmount
-                ? Math.min(bracket.endTaxAmount || Infinity, taxableAfterDeductions) -
-                  bracket.startTaxAmount
-                : 0;
+            const taxableInThisBracket = getBracketTaxableAmount(bracket, taxableAfterDeductions);
+            const taxesPaid = getBracketTaxesPaid(bracket, taxableAfterDeductions);
+
             return (
               <TableRow key={bracket.id}>
                 <TableEntry>{bracket.name}</TableEntry>
@@ -110,9 +121,48 @@ export const TaxZone = () => {
                   {bracket.endTaxAmount ? `-${formatDollars(bracket.endTaxAmount)}` : `+`}
                 </TableEntry>
                 <TableEntry>{formatDollars(taxableInThisBracket)}</TableEntry>
-                <TableEntry>
-                  {formatDollars(taxableInThisBracket * (bracket.percentageRate / 100))}
-                </TableEntry>
+                <TableEntry>{formatDollars(taxesPaid)}</TableEntry>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <p>Total Federal Income Taxes Paid: {formatDollars(totalFederalIncomeTaxesPaid)}</p>
+      <p>Monthly Federal Income Taxes Paid: {formatDollars(totalFederalIncomeTaxesPaid / 12)}</p>
+      <h1>Payroll Taxes</h1>
+      {/* <p>Income Subject to Standard FICA Taxes: {formatDollars(totalW2Income)}</p>
+      <p>
+        Income Subject to Double FICA Taxes (Paying as both Employee and Employer):{' '}
+        {formatDollars(totalSelfEmploymentIncome)}
+      </p>
+      <p>Income Subject to No FICA Taxes: {formatDollars(totalNonFicaINcome)}</p> */}
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Rate</TableHeader>
+            <TableHeader>Income Range</TableHeader>
+            <TableHeader>Amount Taxed at Rate (1x)</TableHeader>
+            <TableHeader>Amount Taxed at Rate (2x)</TableHeader>
+            <TableHeader>Taxes Paid</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {taxSystem.payrollTaxes.map((pt) => {
+            const taxableAmounts = getPayrollTaxDetails({
+              payrollTax: pt,
+              incomes,
+              filingStatus,
+              people,
+            });
+            return (
+              <TableRow key={pt.id}>
+                <TableEntry>{pt.name}</TableEntry>
+                <TableEntry>{formatPercentage(pt.percentageRate)}</TableEntry>
+                <TableEntry>{formatPayrollTaxIncomeRange(pt, filingStatus)}</TableEntry>
+                <TableEntry>{formatDollars(taxableAmounts.taxableAmount1x)}</TableEntry>
+                <TableEntry>{formatDollars(taxableAmounts.taxableAmount2x)}</TableEntry>
+                <TableEntry>{formatDollars(taxableAmounts.taxesPaid)}</TableEntry>
               </TableRow>
             );
           })}

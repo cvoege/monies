@@ -8,5 +8,5 @@ export const formatDollars = (value: number) => {
 };
 
 export const formatPercentage = (value: number) => {
-  return `${roundTo(value, 1).toLocaleString()}%`;
+  return `${roundTo(value, 2).toLocaleString()}%`;
 };

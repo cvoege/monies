@@ -171,7 +171,7 @@ export const US_STANDARD_TAX_SYSTEM: TaxSystem = {
     {
       id: 'social-security-tax',
       name: 'Social Security Tax',
-      type: 'capped',
+      type: 'capped-per-person',
       percentageRate: 6.2,
       affectedByDeductions: false,
       maximumTaxableAmount: 142800,
@@ -179,12 +179,18 @@ export const US_STANDARD_TAX_SYSTEM: TaxSystem = {
     {
       id: 'medicare-tax',
       name: 'Medicare Tax',
-      type: 'uncapped-with-additional',
+      type: 'uncapped',
       percentageRate: 1.45,
       affectedByDeductions: false,
-      additionalPercentageRate: 0.9,
-      additionalKickInSingle: 200000,
-      additionalKickInJoint: 250000,
+    },
+    {
+      id: 'medicare-tax-high-earner',
+      name: 'High Earner Medicare Tax',
+      type: 'additional',
+      percentageRate: 0.9,
+      affectedByDeductions: false,
+      minimumTaxableAmountSingle: 200000,
+      minimumTaxableAmountJoint: 250000,
     },
   ],
 };

@@ -29,31 +29,31 @@ export type BasePayrollTax = {
   affectedByDeductions: boolean;
 };
 
-export type CappedPayrollTax = BasePayrollTax & {
-  type: 'capped';
+export type CappedPerPersonPayrollTax = BasePayrollTax & {
+  type: 'capped-per-person';
   maximumTaxableAmount: number;
 };
 
-export type UncappedWithAdditionalPayrollTax = BasePayrollTax & {
-  type: 'uncapped-with-additional';
-  additionalPercentageRate: number;
-  additionalKickInSingle: number;
-  additionalKickInJoint: number;
+export type UncappedPayrollTax = BasePayrollTax & {
+  type: 'uncapped';
+};
+export type AdditionalPayrollTax = BasePayrollTax & {
+  type: 'additional';
+  minimumTaxableAmountSingle: number;
+  minimumTaxableAmountJoint: number;
 };
 
-export type PayrollTax = CappedPayrollTax | UncappedWithAdditionalPayrollTax;
+export type PayrollTax = CappedPerPersonPayrollTax | UncappedPayrollTax | AdditionalPayrollTax;
+
+export type TaxDetails = {
+  deductions: Array<TaxDeduction>;
+  incomeBrackets: Array<TaxBracket>;
+  capitalGainsBrackets: Array<CapitalGainsTaxBracket>;
+};
 
 export type TaxSystem = {
-  single: {
-    deductions: Array<TaxDeduction>;
-    incomeBrackets: Array<TaxBracket>;
-    capitalGainsBrackets: Array<CapitalGainsTaxBracket>;
-  };
-  joint: {
-    deductions: Array<TaxDeduction>;
-    incomeBrackets: Array<TaxBracket>;
-    capitalGainsBrackets: Array<CapitalGainsTaxBracket>;
-  };
+  single: TaxDetails;
+  joint: TaxDetails;
   payrollTaxes: Array<PayrollTax>;
 };
 
