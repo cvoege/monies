@@ -13,6 +13,9 @@ import {
 } from '../modules/Income';
 import { formatDollars } from '../modules/String';
 
+// TODO: ability to delete things
+// TODO: deal with bugs when switching from joint to single
+
 export const IncomeZone = () => {
   const { incomes, people } = useStore((s) => ({ incomes: s.incomes, people: s.people }), []);
 

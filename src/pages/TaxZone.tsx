@@ -91,6 +91,10 @@ export const TaxZone = () => {
 
   const countyTaxesPaid = totalTaxable * (taxSystem.countyTaxSystem.percentageRate / 100);
 
+  // TODO: Estimate additional witholdings per paycheck
+  // TODO: Estimate total witholdings per paycheck so you can compare and see if the witholdings are accurate
+  // TODO: something to figure out estimated taxes including FICA for all SEP income on a quarterly or per-paycheck basis
+
   return (
     <div>
       <h1>Deductions</h1>
