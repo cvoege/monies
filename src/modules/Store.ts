@@ -4,6 +4,8 @@ import { defaultPerson, Person } from './Person';
 import { defaultRetirementAccountInfo, RetirementAccountInfo } from './RetirementAccount';
 
 type State = {
+  // Not using "bi-weekly" because we can't decide which that means lol
+  w2PaycheckFrequency: 'weekly' | 'every-two-weeks' | 'monthly' | 'twice-per-month';
   downloadStateLink: string | null;
   people: [Person] | [Person, Person];
   incomes: Array<Income>;
@@ -11,6 +13,7 @@ type State = {
 };
 
 const defaultState: State = {
+  w2PaycheckFrequency: 'twice-per-month',
   people: [defaultPerson()],
   incomes: [],
   downloadStateLink: null,
@@ -40,7 +43,7 @@ export const { useStore, useSaved, actions } = createStore({
   encode,
   decode,
   currentVersion: CURRENT_STATE_VERSION,
-  createActions: ({ get, set, getMemoryState, encodeMemoryState }) => {
+  createActions: ({ get, set, getMemoryState, encodeMemoryState, setMemoryState }) => {
     return {
       createIncome: () => {
         set((state) => ({
@@ -124,6 +127,38 @@ export const { useStore, useSaved, actions } = createStore({
             retirementAccountInfo: { ...s.retirementAccountInfo, [key]: value },
           }));
         },
+      deletePerson: (id: Person['id']) => () => {
+        set((s) => {
+          if (s.people.length !== 2) return s;
+          const index = s.people.findIndex((p) => p.id === id);
+          const person = s.people[index];
+          if (!person) return s;
+
+          return {
+            ...s,
+            people: [s.people[index === 0 ? 1 : 0]],
+            incomes: s.incomes.filter((i) => i.personId !== id),
+          };
+        });
+      },
+      uploadState: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+        const file = files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+        reader.onload = function (evt) {
+          const text = evt.target?.result;
+          if (!text) return;
+
+          setMemoryState(text);
+        };
+        reader.onerror = function () {
+          alert("Couldn't process the file you sent");
+        };
+      },
     };
   },
 });

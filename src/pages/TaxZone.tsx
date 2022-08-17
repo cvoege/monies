@@ -1,8 +1,6 @@
 import { formatDollars, formatPercentage } from '../modules/String';
 import { useStore } from '../modules/Store';
-import { getProgressiveDeductions, TaxDeduction } from '../modules/Tax';
 import { US_STANDARD_TAX_SYSTEM } from '../modules/USTaxSystem';
-import { retirementContributionMaxes } from '../modules/RetirementAccount';
 import {
   Table,
   TableBody,
@@ -12,104 +10,65 @@ import {
   TableRow,
 } from 'src/components/Table';
 import {
-  getCombinedTaxableIncome,
   formatPayrollTaxIncomeRange,
   getBracketTaxableAmount,
   getBracketTaxesPaid,
-  getTotalFederalIncomeTaxesPaid,
   getPayrollTaxDetails,
-  getCombinedTotalIncome,
-  getCombinedCompanyContribution,
+  getFullTaxInfo,
+  getPaychecksPerYear,
 } from 'src/modules/Income';
 
 export const TaxZone = () => {
-  const {
-    people,
-    incomes,
-    hsaContribution,
-    hsaContributionType,
-    traditional401kContribution,
-    traditionalIraContribution,
-    iraContributionType,
-    my401kContributionType,
-  } = useStore(
+  const { people, incomes, retirementAccountInfo, w2PaycheckFrequency } = useStore(
     (s) => ({
       people: s.people,
       incomes: s.incomes,
-      ...s.retirementAccountInfo,
+      retirementAccountInfo: s.retirementAccountInfo,
+      w2PaycheckFrequency: s.w2PaycheckFrequency,
     }),
     [],
   );
   const taxSystem = US_STANDARD_TAX_SYSTEM;
-  const filingStatus = people.length === 1 ? 'single' : 'joint';
-  const maxes = retirementContributionMaxes[filingStatus];
-  const taxDetails = taxSystem[filingStatus];
-
-  const totalIncome = getCombinedTotalIncome(incomes);
-  const totalDirectIncome = totalIncome - getCombinedCompanyContribution(incomes);
-  const totalTaxable = getCombinedTaxableIncome(incomes);
-
-  const totalW2Income = getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'w2'));
-  const totalSelfEmploymentIncome = getCombinedTaxableIncome(
-    incomes.filter((i) => i.incomeType === 'self-employment'),
-  );
-  const totalNonFicaINcome = getCombinedTaxableIncome(
-    incomes.filter((i) => i.incomeType === 'non-fica'),
-  );
-
-  const traditionalDeduction: TaxDeduction = {
-    id: 'traditional-accounts',
-    name: 'Traditional Accounts',
-    amount:
-      (hsaContributionType === 'max' ? maxes.hsa : hsaContribution || 0) +
-      (iraContributionType === 'max-traditional' ? maxes.ira : traditionalIraContribution || 0) +
-      (my401kContributionType === 'max-traditional'
-        ? maxes.individual401k
-        : traditional401kContribution || 0),
-  };
-
-  const deductions = [...taxDetails.deductions, traditionalDeduction];
-
-  const totalDeductionValue = deductions.reduce((acc, deduction) => acc + deduction.amount, 0);
-  const progressiveDeductions = getProgressiveDeductions({ totalTaxable, deductions });
-
-  const taxableAfterDeductions =
-    progressiveDeductions.length > 0
-      ? progressiveDeductions[progressiveDeductions.length - 1]?.incomeAfter || totalTaxable
-      : totalTaxable;
-
-  const totalFederalIncomeTaxesPaid = getTotalFederalIncomeTaxesPaid(
+  const fullTaxInfo = getFullTaxInfo({ incomes, people, retirementAccountInfo, taxSystem });
+  const {
     taxDetails,
+    totalIncome,
+    totalTaxable,
+    totalW2Income,
+    totalSelfEmploymentIncome,
+    totalNonFicaINcome,
+    deductions,
+    totalDeductionValue,
+    progressiveDeductions,
     taxableAfterDeductions,
-  );
+    totalFederalIncomeTaxesPaid,
+    totalPayrollTaxesPaid,
+    stateDeduction,
+    stateTaxable,
+    stateTaxesPaid,
+    countyTaxesPaid,
+    totalTaxes,
+    totalAfterTaxIncomeDirect,
+    totalAfterTaxIncome,
+    topMarginalTaxBracket,
+    effectiveTaxRate,
+    filingStatus,
+    totalFederalTaxesPaid,
+  } = fullTaxInfo;
+  const onlyW2FullTaxInfo = getFullTaxInfo({
+    incomes: incomes.filter((i) => i.incomeType === 'w2'),
+    people,
+    retirementAccountInfo,
+    taxSystem,
+  });
+  const w2AndNonFicaTaxInfo = getFullTaxInfo({
+    incomes: incomes.filter((i) => i.incomeType === 'w2' || i.incomeType === 'non-fica'),
+    people,
+    retirementAccountInfo,
+    taxSystem,
+  });
 
-  const totalPayrollTaxesPaid = taxSystem.payrollTaxes.reduce(
-    (acc, cur) =>
-      getPayrollTaxDetails({ payrollTax: cur, incomes, filingStatus, people }).taxesPaid + acc,
-    0,
-  );
-
-  const stateDeduction = taxSystem.stateTaxSystem.deductionPerPerson * people.length;
-  const stateTaxable = totalTaxable - stateDeduction;
-  const stateTaxesPaid = stateTaxable * (taxSystem.stateTaxSystem.percentageRate / 100);
-
-  const countyTaxesPaid = totalTaxable * (taxSystem.countyTaxSystem.percentageRate / 100);
-
-  const totalTaxes =
-    totalFederalIncomeTaxesPaid + totalPayrollTaxesPaid + stateTaxesPaid + countyTaxesPaid;
-
-  const totalAfterTaxIncomeDirect = totalTaxable - totalTaxes;
-  const totalAfterTaxIncome = totalIncome - totalTaxes;
-
-  const topMarginalTaxBracket =
-    taxDetails.incomeBrackets
-      .reverse()
-      .find((bracket) => getBracketTaxableAmount(bracket, taxableAfterDeductions) > 0) ||
-    taxDetails.incomeBrackets[0];
-
-  // TODO: Estimate additional witholdings per paycheck
-  // TODO: Estimate total witholdings per paycheck so you can compare and see if the witholdings are accurate
-  // TODO: something to figure out estimated taxes including FICA for all SEP income on a quarterly or per-paycheck basis
+  const w2PaychecksPerYear = getPaychecksPerYear(w2PaycheckFrequency);
 
   return (
     <div>
@@ -271,9 +230,90 @@ export const TaxZone = () => {
       </p>
       <p>
         Effective Tax Rate (not including company retirement contributions):{' '}
-        {formatPercentage(100 * (totalTaxes / totalDirectIncome))}
+        {formatPercentage(effectiveTaxRate)}
       </p>
       <p>Effective Tax Rate: {formatPercentage(100 * (totalTaxes / totalIncome))}</p>
+      <h1>Non-FICA Additional Paycheck Withholdings</h1>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Federal</TableHeader>
+            <TableHeader>State</TableHeader>
+            <TableHeader>County</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableEntry>Additional Witholdings</TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (w2AndNonFicaTaxInfo.totalFederalTaxesPaid -
+                  onlyW2FullTaxInfo.totalFederalTaxesPaid) /
+                  w2PaychecksPerYear,
+              )}
+            </TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (w2AndNonFicaTaxInfo.stateTaxesPaid - onlyW2FullTaxInfo.stateTaxesPaid) /
+                  w2PaychecksPerYear,
+              )}
+            </TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (w2AndNonFicaTaxInfo.countyTaxesPaid - onlyW2FullTaxInfo.countyTaxesPaid) /
+                  w2PaychecksPerYear,
+              )}
+            </TableEntry>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <h1>SEP Taxes</h1>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Federal</TableHeader>
+            <TableHeader>State</TableHeader>
+            <TableHeader>County</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableEntry>Quarterly Estimated</TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (totalFederalTaxesPaid - w2AndNonFicaTaxInfo.totalFederalTaxesPaid) / 4,
+              )}
+            </TableEntry>
+            <TableEntry>
+              {formatDollars((stateTaxesPaid - w2AndNonFicaTaxInfo.stateTaxesPaid) / 4)}
+            </TableEntry>
+            <TableEntry>
+              {formatDollars((countyTaxesPaid - w2AndNonFicaTaxInfo.countyTaxesPaid) / 4)}
+            </TableEntry>
+          </TableRow>
+          <TableRow>
+            <TableEntry>Additional Witholdings</TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (totalFederalTaxesPaid - w2AndNonFicaTaxInfo.totalFederalTaxesPaid) /
+                  w2PaychecksPerYear,
+              )}
+            </TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (stateTaxesPaid - w2AndNonFicaTaxInfo.stateTaxesPaid) / w2PaychecksPerYear,
+              )}
+            </TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (countyTaxesPaid - w2AndNonFicaTaxInfo.countyTaxesPaid) / w2PaychecksPerYear,
+              )}
+            </TableEntry>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   );
 };

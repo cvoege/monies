@@ -1,6 +1,6 @@
 import { NumberInput } from '../components/Input';
 import { SelectInput } from '../components/SelectInput';
-import { retirementContributionMaxes } from '../modules/RetirementAccount';
+import { RETIREMENT_CONTRIBUTION_MAXES } from '../modules/RetirementAccount';
 import { useStore, actions } from '../modules/Store';
 
 export const RetirementAccountZone = () => {
@@ -19,7 +19,7 @@ export const RetirementAccountZone = () => {
   } = useStore((s) => ({ retirementAccountInfo: s.retirementAccountInfo, people: s.people }), []);
 
   const filingStatus = people.length === 1 ? 'single' : 'joint';
-  const maxes = retirementContributionMaxes[filingStatus];
+  const maxes = RETIREMENT_CONTRIBUTION_MAXES[filingStatus];
 
   return (
     <div>

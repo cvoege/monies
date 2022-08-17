@@ -26,6 +26,10 @@ const App = () => {
           </a>
         )}
       </p>
+      <p>
+        <label>Upload Saved State</label>
+        <input type="file" onChange={actions.uploadState} />
+      </p>
       <PeopleZone />
       <IncomeZone />
       <RetirementAccountZone />

@@ -1,4 +1,4 @@
-export const retirementContributionMaxes = {
+export const RETIREMENT_CONTRIBUTION_MAXES = {
   single: {
     ira: 6000,
     hsa: 3600,

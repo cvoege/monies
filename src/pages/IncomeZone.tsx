@@ -94,6 +94,22 @@ export const IncomeZone = () => {
       <button onClick={actions.createIncome}>Add Income</button>
 
       <h3>Income Details</h3>
+      <p>
+        Total W2 Income:{' '}
+        {formatDollars(getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'w2')))}
+      </p>
+      <p>
+        Total Self Employment Income:{' '}
+        {formatDollars(
+          getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'self-employment')),
+        )}
+      </p>
+      <p>
+        Total Non-FICA Income (put this on &quot;Additional Income&quot; on W4):{' '}
+        {formatDollars(
+          getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'non-fica')),
+        )}
+      </p>
       <p>Total Taxable Income: {formatDollars(totalTaxable)}</p>
       <p>Total Company Contribution: {formatDollars(totalCompanyContribution)}</p>
       <p>Total Compensation: {formatDollars(totalIncome)}</p>

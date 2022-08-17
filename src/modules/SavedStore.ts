@@ -67,12 +67,12 @@ export const createStore = <State, Actions>({
     set: (fn: (s: State) => State) => unknown;
     getMemoryState: () => MemoryState<State>;
     encodeMemoryState: (ms: MemoryState<State>) => string;
+    setMemoryState: (str: string) => void;
   }) => Actions;
 }) => {
   const defaultSavedState = { state: defaultState, version: currentVersion };
-  const fetchSavedState = (): SavedState<State> => {
-    const encoededSavedStateStr = localStorage.getItem(storageKey);
-    if (!encoededSavedStateStr) return defaultSavedState;
+
+  const decodeSavedState = (encoededSavedStateStr: string) => {
     const encodedSavedState: EncodedSavedState = JSON.parse(encoededSavedStateStr);
     // Keep backups of the last versions of previous versions for bugfixing broken migrations
     localStorage.setItem(`${storageKey}-${encodedSavedState.version}`, encoededSavedStateStr);
@@ -82,6 +82,12 @@ export const createStore = <State, Actions>({
     };
 
     return savedState;
+  };
+
+  const fetchSavedState = (): SavedState<State> => {
+    const encoededSavedStateStr = localStorage.getItem(storageKey);
+    if (!encoededSavedStateStr) return defaultSavedState;
+    return decodeSavedState(encoededSavedStateStr);
   };
 
   const initialSavedState = fetchSavedState();
@@ -128,11 +134,24 @@ export const createStore = <State, Actions>({
     setSavedState();
   };
 
+  const setMemoryState = (encodedSavedStateStr: string) => {
+    const savedState = decodeSavedState(encodedSavedStateStr);
+    const newMemoryState: MemoryState<State> = {
+      ...savedState,
+      saved: false,
+    };
+    memoryState = newMemoryState;
+    onSaveListeners.forEach((listener) => listener());
+    onChangeListeners.forEach((listener) => listener());
+    setSavedState();
+  };
+
   const actions = createActions({
     get: () => memoryState.state,
     set: setState,
     getMemoryState: () => memoryState,
     encodeMemoryState,
+    setMemoryState,
   });
 
   const useStore = <SelectedState>(

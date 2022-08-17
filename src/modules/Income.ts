@@ -1,7 +1,35 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Person } from './Person';
+import { RetirementAccountInfo, RETIREMENT_CONTRIBUTION_MAXES } from './RetirementAccount';
 import { formatDollars } from './String';
-import { PayrollTax, TaxBracket, TaxDetails } from './Tax';
+import {
+  getProgressiveDeductions,
+  PayrollTax,
+  TaxBracket,
+  TaxDeduction,
+  TaxDetails,
+  TaxSystem,
+} from './Tax';
+
+export type PaycheckFrequency = 'weekly' | 'every-two-weeks' | 'twice-per-month' | 'monthly';
+export const paycheckFrequencyOptions: { label: string; value: PaycheckFrequency }[] = [
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'every-two-weeks', label: 'Every 2 Weeks' },
+  { value: 'twice-per-month', label: 'Twice Per Month' },
+  { value: 'monthly', label: 'Monthly' },
+];
+
+export const getPaychecksPerYear = (paycheckFrequency: PaycheckFrequency) => {
+  if (paycheckFrequency === 'weekly') {
+    return 52;
+  } else if (paycheckFrequency === 'every-two-weeks') {
+    return 26;
+  } else if (paycheckFrequency === 'twice-per-month') {
+    return 24;
+  } else {
+    return 12;
+  }
+};
 
 export type Income = {
   id: string;
@@ -182,4 +210,122 @@ export const formatPayrollTaxIncomeRange = (pt: PayrollTax, filingStatus: 'singl
       filingStatus === 'single' ? pt.minimumTaxableAmountSingle : pt.minimumTaxableAmountJoint,
     )}+`;
   }
+};
+
+export const getFullTaxInfo = ({
+  incomes,
+  people,
+  retirementAccountInfo,
+  taxSystem,
+}: {
+  incomes: Array<Income>;
+  people: [Person] | [Person, Person];
+  retirementAccountInfo: RetirementAccountInfo;
+  taxSystem: TaxSystem;
+}) => {
+  const filingStatus: 'single' | 'joint' = people.length === 1 ? 'single' : 'joint';
+  const maxes = RETIREMENT_CONTRIBUTION_MAXES[filingStatus];
+  const {
+    hsaContribution,
+    hsaContributionType,
+    traditional401kContribution,
+    traditionalIraContribution,
+    iraContributionType,
+    my401kContributionType,
+  } = retirementAccountInfo;
+  const taxDetails = taxSystem[filingStatus];
+
+  const totalIncome = getCombinedTotalIncome(incomes);
+  const totalDirectIncome = totalIncome - getCombinedCompanyContribution(incomes);
+  const totalTaxable = getCombinedTaxableIncome(incomes);
+
+  const totalW2Income = getCombinedTaxableIncome(incomes.filter((i) => i.incomeType === 'w2'));
+  const totalSelfEmploymentIncome = getCombinedTaxableIncome(
+    incomes.filter((i) => i.incomeType === 'self-employment'),
+  );
+  const totalNonFicaINcome = getCombinedTaxableIncome(
+    incomes.filter((i) => i.incomeType === 'non-fica'),
+  );
+
+  const traditionalDeduction: TaxDeduction = {
+    id: 'traditional-accounts',
+    name: 'Traditional Accounts',
+    amount:
+      (hsaContributionType === 'max' ? maxes.hsa : hsaContribution || 0) +
+      (iraContributionType === 'max-traditional' ? maxes.ira : traditionalIraContribution || 0) +
+      (my401kContributionType === 'max-traditional'
+        ? maxes.individual401k
+        : traditional401kContribution || 0),
+  };
+
+  const deductions = [...taxDetails.deductions, traditionalDeduction];
+
+  const totalDeductionValue = deductions.reduce((acc, deduction) => acc + deduction.amount, 0);
+  const progressiveDeductions = getProgressiveDeductions({ totalTaxable, deductions });
+
+  const taxableAfterDeductions =
+    progressiveDeductions.length > 0
+      ? progressiveDeductions[progressiveDeductions.length - 1]?.incomeAfter || totalTaxable
+      : totalTaxable;
+
+  const totalFederalIncomeTaxesPaid = getTotalFederalIncomeTaxesPaid(
+    taxDetails,
+    taxableAfterDeductions,
+  );
+
+  const totalPayrollTaxesPaid = taxSystem.payrollTaxes.reduce(
+    (acc, cur) =>
+      getPayrollTaxDetails({ payrollTax: cur, incomes, filingStatus, people }).taxesPaid + acc,
+    0,
+  );
+
+  const stateDeduction = taxSystem.stateTaxSystem.deductionPerPerson * people.length;
+  const stateTaxable = totalTaxable - stateDeduction;
+  const stateTaxesPaid = stateTaxable * (taxSystem.stateTaxSystem.percentageRate / 100);
+
+  const countyTaxesPaid = totalTaxable * (taxSystem.countyTaxSystem.percentageRate / 100);
+
+  const totalFederalTaxesPaid = totalFederalIncomeTaxesPaid + totalPayrollTaxesPaid;
+
+  const totalTaxes = totalFederalTaxesPaid + stateTaxesPaid + countyTaxesPaid;
+
+  const totalAfterTaxIncomeDirect = totalTaxable - totalTaxes;
+  const totalAfterTaxIncome = totalIncome - totalTaxes;
+
+  const topMarginalTaxBracket =
+    taxDetails.incomeBrackets
+      .slice(0)
+      .reverse()
+      .find((bracket) => getBracketTaxableAmount(bracket, taxableAfterDeductions) > 0) ||
+    taxDetails.incomeBrackets[0];
+
+  const effectiveTaxRate = 100 * (totalTaxes / totalDirectIncome);
+
+  return {
+    filingStatus,
+    taxDetails,
+    totalIncome,
+    totalDirectIncome,
+    totalTaxable,
+    totalW2Income,
+    totalSelfEmploymentIncome,
+    totalNonFicaINcome,
+    traditionalDeduction,
+    deductions,
+    totalDeductionValue,
+    progressiveDeductions,
+    taxableAfterDeductions,
+    totalFederalIncomeTaxesPaid,
+    totalFederalTaxesPaid,
+    totalPayrollTaxesPaid,
+    stateDeduction,
+    stateTaxable,
+    stateTaxesPaid,
+    countyTaxesPaid,
+    totalTaxes,
+    totalAfterTaxIncomeDirect,
+    totalAfterTaxIncome,
+    topMarginalTaxBracket,
+    effectiveTaxRate,
+  };
 };
