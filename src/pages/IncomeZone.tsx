@@ -88,6 +88,9 @@ export const IncomeZone = () => {
             <p>Taxable Income: {formatDollars(getTaxableIncome(income))}</p>
             <p>Company Contribution: {formatDollars(getCompanyContribution(income))}</p>
             <p>Total: {formatDollars(getTotalIncome(income))}</p>
+            <p>
+              <button onClick={actions.deleteIncome(income.id)}>Delete</button>
+            </p>
           </div>
         );
       })}

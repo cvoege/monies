@@ -153,11 +153,14 @@ export const { useStore, useSaved, actions } = createStore({
           const text = evt.target?.result;
           if (!text) return;
 
-          setMemoryState(text);
+          setMemoryState(text as string);
         };
         reader.onerror = function () {
           alert("Couldn't process the file you sent");
         };
+      },
+      deleteIncome: (id: Income['id']) => () => {
+        set((s) => ({ ...s, incomes: s.incomes.filter((i) => i.id !== id) }));
       },
     };
   },

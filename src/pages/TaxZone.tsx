@@ -70,6 +70,15 @@ export const TaxZone = () => {
 
   const w2PaychecksPerYear = getPaychecksPerYear(w2PaycheckFrequency);
 
+  const ficaFederalDue =
+    w2AndNonFicaTaxInfo.totalFederalTaxesPaid - onlyW2FullTaxInfo.totalFederalTaxesPaid;
+  const ficaStateDue = w2AndNonFicaTaxInfo.stateTaxesPaid - onlyW2FullTaxInfo.stateTaxesPaid;
+  const ficaCountyDue = w2AndNonFicaTaxInfo.countyTaxesPaid - onlyW2FullTaxInfo.countyTaxesPaid;
+
+  const sepFederalDue = totalFederalTaxesPaid - w2AndNonFicaTaxInfo.totalFederalTaxesPaid;
+  const sepStateDue = stateTaxesPaid - w2AndNonFicaTaxInfo.stateTaxesPaid;
+  const sepCountyDue = countyTaxesPaid - w2AndNonFicaTaxInfo.countyTaxesPaid;
+
   return (
     <div>
       <h1>Deductions</h1>
@@ -233,7 +242,7 @@ export const TaxZone = () => {
         {formatPercentage(effectiveTaxRate)}
       </p>
       <p>Effective Tax Rate: {formatPercentage(100 * (totalTaxes / totalIncome))}</p>
-      <h1>Non-FICA Additional Paycheck Withholdings</h1>
+      <h1>Non-FICA Taxes</h1>
       <Table>
         <TableHead>
           <TableRow>
@@ -245,26 +254,20 @@ export const TaxZone = () => {
         </TableHead>
         <TableBody>
           <TableRow>
+            <TableEntry>Quarterly Estimated</TableEntry>
+            <TableEntry>{formatDollars(ficaFederalDue / 4)}</TableEntry>
+            <TableEntry>{formatDollars(ficaStateDue / 4)}</TableEntry>
+            <TableEntry>
+              {formatDollars(
+                (w2AndNonFicaTaxInfo.countyTaxesPaid - onlyW2FullTaxInfo.countyTaxesPaid) / 4,
+              )}
+            </TableEntry>
+          </TableRow>
+          <TableRow>
             <TableEntry>Additional Witholdings</TableEntry>
-            <TableEntry>
-              {formatDollars(
-                (w2AndNonFicaTaxInfo.totalFederalTaxesPaid -
-                  onlyW2FullTaxInfo.totalFederalTaxesPaid) /
-                  w2PaychecksPerYear,
-              )}
-            </TableEntry>
-            <TableEntry>
-              {formatDollars(
-                (w2AndNonFicaTaxInfo.stateTaxesPaid - onlyW2FullTaxInfo.stateTaxesPaid) /
-                  w2PaychecksPerYear,
-              )}
-            </TableEntry>
-            <TableEntry>
-              {formatDollars(
-                (w2AndNonFicaTaxInfo.countyTaxesPaid - onlyW2FullTaxInfo.countyTaxesPaid) /
-                  w2PaychecksPerYear,
-              )}
-            </TableEntry>
+            <TableEntry>{formatDollars(ficaFederalDue / w2PaychecksPerYear)}</TableEntry>
+            <TableEntry>{formatDollars(ficaStateDue / w2PaychecksPerYear)}</TableEntry>
+            <TableEntry>{formatDollars(ficaCountyDue / w2PaychecksPerYear)}</TableEntry>
           </TableRow>
         </TableBody>
       </Table>
@@ -281,35 +284,45 @@ export const TaxZone = () => {
         <TableBody>
           <TableRow>
             <TableEntry>Quarterly Estimated</TableEntry>
-            <TableEntry>
-              {formatDollars(
-                (totalFederalTaxesPaid - w2AndNonFicaTaxInfo.totalFederalTaxesPaid) / 4,
-              )}
-            </TableEntry>
-            <TableEntry>
-              {formatDollars((stateTaxesPaid - w2AndNonFicaTaxInfo.stateTaxesPaid) / 4)}
-            </TableEntry>
-            <TableEntry>
-              {formatDollars((countyTaxesPaid - w2AndNonFicaTaxInfo.countyTaxesPaid) / 4)}
-            </TableEntry>
+            <TableEntry>{formatDollars(sepFederalDue / 4)}</TableEntry>
+            <TableEntry>{formatDollars(sepStateDue / 4)}</TableEntry>
+            <TableEntry>{formatDollars(sepCountyDue / 4)}</TableEntry>
+          </TableRow>
+          <TableRow>
+            <TableEntry>Additional Witholdings</TableEntry>
+            <TableEntry>{formatDollars(sepFederalDue / w2PaychecksPerYear)}</TableEntry>
+            <TableEntry>{formatDollars(sepStateDue / w2PaychecksPerYear)}</TableEntry>
+            <TableEntry>{formatDollars(sepCountyDue / w2PaychecksPerYear)}</TableEntry>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <h1>Total Additional Taxes</h1>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Federal</TableHeader>
+            <TableHeader>State</TableHeader>
+            <TableHeader>County</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableEntry>Quarterly Estimated</TableEntry>
+            <TableEntry>{formatDollars((sepFederalDue + ficaFederalDue) / 4)}</TableEntry>
+            <TableEntry>{formatDollars((sepStateDue + ficaStateDue) / 4)}</TableEntry>
+            <TableEntry>{formatDollars((sepCountyDue + ficaCountyDue) / 4)}</TableEntry>
           </TableRow>
           <TableRow>
             <TableEntry>Additional Witholdings</TableEntry>
             <TableEntry>
-              {formatDollars(
-                (totalFederalTaxesPaid - w2AndNonFicaTaxInfo.totalFederalTaxesPaid) /
-                  w2PaychecksPerYear,
-              )}
+              {formatDollars((sepFederalDue + ficaFederalDue) / w2PaychecksPerYear)}
             </TableEntry>
             <TableEntry>
-              {formatDollars(
-                (stateTaxesPaid - w2AndNonFicaTaxInfo.stateTaxesPaid) / w2PaychecksPerYear,
-              )}
+              {formatDollars((sepStateDue + ficaStateDue) / w2PaychecksPerYear)}
             </TableEntry>
             <TableEntry>
-              {formatDollars(
-                (countyTaxesPaid - w2AndNonFicaTaxInfo.countyTaxesPaid) / w2PaychecksPerYear,
-              )}
+              {formatDollars((sepCountyDue + ficaCountyDue) / w2PaychecksPerYear)}
             </TableEntry>
           </TableRow>
         </TableBody>
