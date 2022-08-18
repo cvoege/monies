@@ -4,6 +4,7 @@ import { IncomeZone } from './pages/IncomeZone';
 import { PeopleZone } from './pages/PeopleZone';
 import { RetirementAccountZone } from './pages/RetirementAccountZone';
 import { TaxZone } from './pages/TaxZone';
+import { InvestmentZone } from './pages/InvestmentZone';
 
 const App = () => {
   const saved = useSaved();
@@ -34,6 +35,7 @@ const App = () => {
       <IncomeZone />
       <RetirementAccountZone />
       <TaxZone />
+      <InvestmentZone />
     </div>
   );
 };

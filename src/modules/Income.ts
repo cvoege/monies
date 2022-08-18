@@ -57,7 +57,7 @@ export const incomeTypeOptions: Array<{ label: string; value: Income['incomeType
   { label: 'Non FICA (Dividends, Rent)', value: 'non-fica' },
 ];
 
-export const defaultIncome = (personId: string): Income => {
+export const newIncome = (personId: string): Income => {
   return {
     id: uuidv4(),
     personId: personId,

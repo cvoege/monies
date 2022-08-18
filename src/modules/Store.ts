@@ -1,15 +1,18 @@
-import { defaultIncome, Income } from './Income';
+import { newIncome, Income } from './Income';
 import { createStore, Decode, Encode } from './SavedStore';
 import { defaultPerson, Person } from './Person';
 import { defaultRetirementAccountInfo, RetirementAccountInfo } from './RetirementAccount';
+import { Account, Balance, Investment, newAccount, newBalance, newInvestment } from './Investment';
 
 type State = {
-  // Not using "bi-weekly" because we can't decide which that means lol
   w2PaycheckFrequency: 'weekly' | 'every-two-weeks' | 'monthly' | 'twice-per-month';
   downloadStateLink: string | null;
   people: [Person] | [Person, Person];
   incomes: Array<Income>;
   retirementAccountInfo: RetirementAccountInfo;
+  investments: Array<Investment>;
+  accounts: Array<Account>;
+  balances: Array<Balance>;
 };
 
 const defaultState: State = {
@@ -18,6 +21,9 @@ const defaultState: State = {
   incomes: [],
   downloadStateLink: null,
   retirementAccountInfo: defaultRetirementAccountInfo(),
+  investments: [],
+  accounts: [],
+  balances: [],
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -45,10 +51,13 @@ export const { useStore, useSaved, actions } = createStore({
   currentVersion: CURRENT_STATE_VERSION,
   createActions: ({ get, set, getMemoryState, encodeMemoryState, setMemoryState }) => {
     return {
+      load: () => {
+        set((state) => ({ ...state, investments: [], accounts: [], balances: [] }));
+      },
       createIncome: () => {
         set((state) => ({
           ...state,
-          incomes: [...state.incomes, defaultIncome(state.people[0].id)],
+          incomes: [...state.incomes, newIncome(state.people[0].id)],
         }));
       },
       setIncome:
@@ -161,6 +170,65 @@ export const { useStore, useSaved, actions } = createStore({
       },
       deleteIncome: (id: Income['id']) => () => {
         set((s) => ({ ...s, incomes: s.incomes.filter((i) => i.id !== id) }));
+      },
+      setAccountField:
+        (id: Account['id']) =>
+        <K extends keyof Account>(key: K) =>
+        (value: Account[K]) => {
+          const accountIndex = get().accounts.findIndex((account) => account.id === id);
+          const account = get().accounts[accountIndex];
+          if (!account) return;
+
+          set((state) => ({
+            ...state,
+            accounts: [
+              ...state.accounts.slice(0, accountIndex),
+              { ...account, [key]: value },
+              ...state.accounts.slice(accountIndex + 1),
+            ],
+          }));
+        },
+      createAccount: () => {
+        set((s) => ({ ...s, accounts: [...s.accounts, newAccount()] }));
+      },
+      deleteAccount: (id: Account['id']) => () => {
+        set((s) => ({ ...s, accounts: s.accounts.filter((a) => a.id !== id) }));
+      },
+      setInvestmentField:
+        (id: Investment['id']) =>
+        <K extends keyof Investment>(key: K) =>
+        (value: Investment[K]) => {
+          const investmentIndex = get().investments.findIndex((investment) => investment.id === id);
+          const investment = get().investments[investmentIndex];
+          if (!investment) return;
+
+          set((state) => ({
+            ...state,
+            investments: [
+              ...state.investments.slice(0, investmentIndex),
+              { ...investment, [key]: value },
+              ...state.investments.slice(investmentIndex + 1),
+            ],
+          }));
+        },
+      createInvestment: () => {
+        set((s) => ({ ...s, investments: [...s.investments, newInvestment()] }));
+      },
+      deleteInvestment: (id: Investment['id']) => () => {
+        set((s) => ({ ...s, investments: s.investments.filter((a) => a.id !== id) }));
+      },
+      setBalance: (investmentId: string) => (accountId: string) => (value: number | null) => {
+        const existingBalance =
+          get().balances.find(
+            (b) => b.investmentId === investmentId && b.accountId === accountId,
+          ) || newBalance({ investmentId, accountId });
+        set((s) => ({
+          ...s,
+          balances: [
+            ...s.balances.filter((b) => b.id !== existingBalance.id),
+            { ...existingBalance, value: value || 0 },
+          ],
+        }));
       },
     };
   },
