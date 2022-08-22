@@ -12,9 +12,6 @@ export const RETIREMENT_CONTRIBUTION_MAXES = {
     total401k: 122000,
   },
 };
-
-// TODO: income max in traditional IRA
-// TODO: age 50 or older limits
 export type RetirementAccountInfo = {
   hsaContributionType: 'custom' | 'max';
   hsaContribution: number | null;

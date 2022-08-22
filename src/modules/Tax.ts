@@ -50,10 +50,6 @@ export type TaxDetails = {
   incomeBrackets: Array<TaxBracket>;
   capitalGainsBrackets: Array<CapitalGainsTaxBracket>;
 };
-
-// TODO: other types of state taxes (with brackets and different types of deductions)
-// TODO: allow them to list dependents and figure out all the credits and stuff
-// (also affects the indiana taxes deductions per person)
 export type StateTaxSystem = {
   type: 'flat';
   percentageRate: number;

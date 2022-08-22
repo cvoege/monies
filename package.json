@@ -7,7 +7,7 @@
     "start": "parcel src/index.html",
     "build": "parcel build src/index.html --dist-dir dist --no-autoinstall --public-url '.'",
     "clean": "rm -rf ./dist ./node_modules ./.parcel-cache",
-    "lint": "yarn lint:prettier && yarn lint:es && lint:types",
+    "lint": "yarn lint:prettier && yarn lint:es && yarn lint:types",
     "lint:fix": "yarn format && yarn lint:es:fix && yarn lint:types",
     "lint:es": "yarn eslint . --max-warnings 0 --ignore-path .gitignore",
     "lint:es:fix": "yarn lint:es --fix",
