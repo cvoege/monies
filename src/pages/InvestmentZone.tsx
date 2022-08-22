@@ -9,15 +9,21 @@ import {
   TableBody,
   TableEntry,
 } from 'src/components/Table';
+import { mapArrayToObject } from 'src/modules/Array';
 import { Account, Balance, Investment } from 'src/modules/Investment';
 import { actions, useStore } from 'src/modules/Store';
-import { formatDollars } from 'src/modules/String';
+import { formatDollars, formatPercentage } from 'src/modules/String';
 
 type BalanceMap = Record<Investment['id'], Record<Account['id'], Balance>>;
 
 export const InvestmentZone = () => {
-  const { investments, accounts, balances } = useStore(
-    (s) => ({ investments: s.investments, balances: s.balances, accounts: s.accounts }),
+  const { investments, accounts, balances, newInvestmentValue } = useStore(
+    (s) => ({
+      investments: s.investments,
+      balances: s.balances,
+      accounts: s.accounts,
+      newInvestmentValue: s.newInvestmentValue,
+    }),
     [],
   );
   const investmentIdToAccountIdToBalance: BalanceMap = useMemo(() => {
@@ -30,6 +36,72 @@ export const InvestmentZone = () => {
     return result;
   }, [balances]);
 
+  const totalInvestmentValue = useMemo(() => {
+    return investments.reduce((totalAcc, curInvestment) => {
+      return (
+        totalAcc +
+        accounts.reduce((accountAcc, curAccount) => {
+          const b = investmentIdToAccountIdToBalance[curInvestment.id]?.[curAccount.id];
+          return accountAcc + (b?.value || 0);
+        }, 0)
+      );
+    }, 0);
+  }, [investments, accounts, investmentIdToAccountIdToBalance]);
+
+  const investmentDetails = useMemo(() => {
+    return investments.map((investment) => {
+      const currentInvestmentValue = accounts.reduce((acc, account) => {
+        const b = investmentIdToAccountIdToBalance[investment.id]?.[account.id];
+        return acc + (b?.value || 0);
+      }, 0);
+      const currentAllocationPercentage = (100 * currentInvestmentValue) / totalInvestmentValue;
+      const currentAllocatinPercentageWithNewInvestment =
+        (100 * currentInvestmentValue) / (totalInvestmentValue + (newInvestmentValue || 0));
+      const difference = currentAllocationPercentage - (investment.targetPercentage || 0);
+      const differenceWithNewInvestment =
+        currentAllocatinPercentageWithNewInvestment - (investment.targetPercentage || 0);
+      const yearlyRebalance = 0 - (difference / 100) * totalInvestmentValue;
+      const yearlyRebalanceWithNewInvestment =
+        0 - (differenceWithNewInvestment / 100) * totalInvestmentValue;
+
+      return {
+        ...investment,
+        currentInvestmentValue,
+        currentAllocationPercentage,
+        difference,
+        yearlyRebalance,
+        differenceWithNewInvestment,
+        yearlyRebalanceWithNewInvestment,
+      };
+    });
+  }, [
+    investments,
+    accounts,
+    investmentIdToAccountIdToBalance,
+    totalInvestmentValue,
+    newInvestmentValue,
+  ]);
+
+  const fullInvestmentDetails = useMemo(() => {
+    const negativeInvestments = investmentDetails.filter((i) => i.differenceWithNewInvestment < 0);
+    const totalNegativeRebalance = negativeInvestments.reduce(
+      (acc, i) => i.yearlyRebalanceWithNewInvestment + acc,
+      0,
+    );
+    return investmentDetails.map((investment) => {
+      const contributionRebalance =
+        investment.differenceWithNewInvestment < 0
+          ? (newInvestmentValue || 0) *
+            (investment.yearlyRebalanceWithNewInvestment / totalNegativeRebalance)
+          : 0;
+
+      return {
+        ...investment,
+        contributionRebalance,
+      };
+    });
+  }, [investmentDetails, newInvestmentValue]);
+
   return (
     <div>
       <h1>Accounts</h1>
@@ -40,24 +112,34 @@ export const InvestmentZone = () => {
             key={account.id}
             style={{ border: '1px solid black', padding: '10px', marginBottom: '10px' }}
           >
-            <b>{account.name}</b>
-            Name: <TextInput value={account.name} onChange={setField('name')} />
-            Type:{' '}
-            <SelectInput
-              value={account.type}
-              onChange={setField('type')}
-              options={[
-                { value: 'taxable', label: 'Taxable' },
-                { value: 'hsa', label: 'HSA' },
-                { value: 'roth', label: 'Roth' },
-                { value: 'traditional', label: 'Traditional' },
-              ]}
-            />
+            <div>
+              <b>{account.name}</b>
+            </div>
+            <div>
+              Name: <TextInput value={account.name} onChange={setField('name')} />
+            </div>
+            <div>
+              Type:{' '}
+              <SelectInput
+                value={account.type}
+                onChange={setField('type')}
+                options={[
+                  { value: 'taxable', label: 'Taxable' },
+                  { value: 'hsa', label: 'HSA' },
+                  { value: 'roth', label: 'Roth' },
+                  { value: 'traditional', label: 'Traditional' },
+                ]}
+              />
+            </div>
           </div>
         );
       })}
       <button onClick={actions.createAccount}>Create Account</button>
       <h1>Investments</h1>
+      <p>
+        New investment:{' '}
+        <NumberInput value={newInvestmentValue} onChange={actions.setField('newInvestmentValue')} />
+      </p>
       <button onClick={actions.createInvestment}>Create Investment</button>
       <Table>
         <TableHead>
@@ -78,8 +160,9 @@ export const InvestmentZone = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {investments.map((investment) => {
+          {fullInvestmentDetails.map((investment) => {
             const setField = actions.setInvestmentField(investment.id);
+
             return (
               <TableRow key={investment.id}>
                 <TableEntry>
@@ -98,19 +181,17 @@ export const InvestmentZone = () => {
                     </TableEntry>
                   );
                 })}
+                <TableEntry>{formatDollars(investment.currentInvestmentValue)}</TableEntry>
                 <TableEntry>
-                  {formatDollars(
-                    accounts.reduce((acc, account) => {
-                      const b = investmentIdToAccountIdToBalance[investment.id]?.[account.id];
-                      return acc + (b?.value || 0);
-                    }, 0),
-                  )}
+                  <NumberInput
+                    value={investment.targetPercentage}
+                    onChange={setField('targetPercentage')}
+                  />
                 </TableEntry>
-                <TableEntry>Target Allocation (%)</TableEntry>
-                <TableEntry>Total Allocation (%)</TableEntry>
-                <TableEntry>Difference (%)</TableEntry>
-                <TableEntry>Yearly Rebalance</TableEntry>
-                <TableEntry>Contribution Rebalance</TableEntry>
+                <TableEntry>{formatPercentage(investment.currentAllocationPercentage)}</TableEntry>
+                <TableEntry>{formatPercentage(investment.difference)}</TableEntry>
+                <TableEntry>{formatDollars(investment.yearlyRebalance)}</TableEntry>
+                <TableEntry>{formatDollars(investment.contributionRebalance)}</TableEntry>
                 <TableEntry>Actions</TableEntry>
               </TableRow>
             );

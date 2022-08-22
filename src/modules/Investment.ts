@@ -5,7 +5,7 @@ export type Investment = {
   name: string;
   assetType: 'stock' | 'bond' | 'balanced';
   exposureType: 'us' | 'international' | 'mixed';
-  targetPercentage: number;
+  targetPercentage: number | null;
 };
 
 export type Account = {

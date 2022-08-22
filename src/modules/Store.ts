@@ -10,6 +10,7 @@ type State = {
   people: [Person] | [Person, Person];
   incomes: Array<Income>;
   retirementAccountInfo: RetirementAccountInfo;
+  newInvestmentValue: number | null;
   investments: Array<Investment>;
   accounts: Array<Account>;
   balances: Array<Balance>;
@@ -24,6 +25,7 @@ const defaultState: State = {
   investments: [],
   accounts: [],
   balances: [],
+  newInvestmentValue: 0,
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
