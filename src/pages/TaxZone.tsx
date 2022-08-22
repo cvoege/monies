@@ -241,7 +241,7 @@ export const TaxZone = () => {
         Effective Tax Rate (not including company retirement contributions):{' '}
         {formatPercentage(effectiveTaxRate)}
       </p>
-      <p>Effective Tax Rate: {formatPercentage(100 * (totalTaxes / totalIncome))}</p>
+      <p>Effective Tax Rate: {formatPercentage(100 * (totalTaxes / (totalIncome || 1)))}</p>
       <h1>Non-FICA Taxes</h1>
       <Table>
         <TableHead>
