@@ -31,7 +31,8 @@ jobs:
       - run: yarn build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
-        path: dist
+        with:
+          path: dist
 
   # Deploy Github Pages
   deploy-pages:
