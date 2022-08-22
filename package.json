@@ -1,12 +1,11 @@
 {
-  "name": "react-boilerplate",
+  "name": "monies",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "parcel src/index.html",
-    "build": "parcel build src/index.html --no-source-maps",
+    "build": "parcel build src/index.html --dist-dir dist --no-autoinstall",
     "clean": "rm -rf ./dist ./node_modules ./.parcel-cache",
     "lint": "yarn lint:prettier && yarn lint:es && lint:types",
     "lint:fix": "yarn format && yarn lint:es:fix && yarn lint:types",
