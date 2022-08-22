@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "parcel src/index.html",
-    "build": "parcel build src/index.html --dist-dir dist --no-autoinstall",
+    "build": "parcel build src/index.html --dist-dir dist --no-autoinstall --public-url '.'",
     "clean": "rm -rf ./dist ./node_modules ./.parcel-cache",
     "lint": "yarn lint:prettier && yarn lint:es && lint:types",
     "lint:fix": "yarn format && yarn lint:es:fix && yarn lint:types",
