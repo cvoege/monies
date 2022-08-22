@@ -299,7 +299,7 @@ export const getFullTaxInfo = ({
       .find((bracket) => getBracketTaxableAmount(bracket, taxableAfterDeductions) > 0) ||
     taxDetails.incomeBrackets[0];
 
-  const effectiveTaxRate = 100 * (totalTaxes / totalDirectIncome);
+  const effectiveTaxRate = 100 * (totalTaxes / (totalDirectIncome || 1));
 
   return {
     filingStatus,
