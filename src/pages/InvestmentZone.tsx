@@ -9,7 +9,6 @@ import {
   TableBody,
   TableEntry,
 } from 'src/components/Table';
-import { mapArrayToObject } from 'src/modules/Array';
 import { Account, Balance, Investment } from 'src/modules/Investment';
 import { actions, useStore } from 'src/modules/Store';
 import { formatDollars, formatPercentage } from 'src/modules/String';

@@ -158,6 +158,10 @@ export const createStore = <State, Actions>({
     selector: (currentState: State) => SelectedState,
     dependencies: Array<unknown>,
   ) => {
+    // We only want to use the first version of the function they pass
+    // and don't want to deal with the updates causing the useEffect hooks
+    // to re-trigger
+    const selectorRef = useRef(selector);
     const selectedState = selector(memoryState.state);
     const [hookState, setHookState] = useState<SelectedState>(selectedState);
     const currentHookStateRef = useRef<SelectedState>(selectedState);
@@ -170,7 +174,7 @@ export const createStore = <State, Actions>({
     useEffect(() => {
       const unsub = subscribe(() => {
         const oldHookState = currentHookStateRef.current;
-        const newHookState = selector(memoryState.state);
+        const newHookState = selectorRef.current(memoryState.state);
         if (!shallowEquals(oldHookState, newHookState)) {
           currentHookStateRef.current = newHookState;
           setHookState(newHookState);
@@ -179,10 +183,10 @@ export const createStore = <State, Actions>({
       return () => {
         unsub();
       };
-    }, [selector]);
+    }, []);
 
     useEffect(() => {
-      const newHookState = selector(memoryState.state);
+      const newHookState = selectorRef.current(memoryState.state);
       const oldDependencies = previousDependenciesRef.current;
       if (
         dependencies.length !== oldDependencies.length ||
@@ -192,7 +196,7 @@ export const createStore = <State, Actions>({
         previousDependenciesRef.current = dependencies;
         setHookState(newHookState);
       }
-    }, [selector, dependencies]);
+    }, [dependencies]);
 
     return hookState;
   };
