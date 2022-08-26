@@ -138,6 +138,7 @@ export const TaxZone = () => {
       <p>Total Federal Income Taxes Paid: {formatDollars(totalFederalIncomeTaxesPaid)}</p>
       <p>Monthly Federal Income Taxes Paid: {formatDollars(totalFederalIncomeTaxesPaid / 12)}</p>
       <h1>Payroll Taxes</h1>
+      {/* TODO: This is wrong, not calculating correctly for joint */}
       <p>W2 Income: {formatDollars(totalW2Income)}</p>
       <p>Self Employment Income: {formatDollars(totalSelfEmploymentIncome)}</p>
       <p>Income Subject to No FICA Taxes: {formatDollars(totalNonFicaINcome)}</p>
@@ -265,6 +266,10 @@ export const TaxZone = () => {
           </TableRow>
           <TableRow>
             <TableEntry>Additional Witholdings</TableEntry>
+            {/* TODO: Add a row for monthly additional withholdings */}
+            {/* TODO: Add option for second person paycheck frequency */}
+            {/* TODO: Add thing for combined federal taxes between income and payroll */}
+            {/* TODO: Render number that "max" means in a disabled input on retirement accounts */}
             <TableEntry>{formatDollars(ficaFederalDue / w2PaychecksPerYear)}</TableEntry>
             <TableEntry>{formatDollars(ficaStateDue / w2PaychecksPerYear)}</TableEntry>
             <TableEntry>{formatDollars(ficaCountyDue / w2PaychecksPerYear)}</TableEntry>
