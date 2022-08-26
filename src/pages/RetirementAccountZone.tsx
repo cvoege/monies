@@ -73,7 +73,7 @@ export const RetirementAccountZone = () => {
             value={hsaContribution}
             onChange={actions.setRetirementInfoField('hsaContribution')}
             min={0}
-            max={maxes.hsa - (hsaContribution || 0)}
+            max={maxes.hsa}
           />
         </div>
       )}

@@ -1,13 +1,13 @@
 export const RETIREMENT_CONTRIBUTION_MAXES = {
   single: {
     ira: 6000,
-    hsa: 3600,
+    hsa: 3650,
     individual401k: 20500,
     total401k: 61000,
   },
   joint: {
     ira: 12000,
-    hsa: 7200,
+    hsa: 7300,
     individual401k: 41000,
     total401k: 122000,
   },

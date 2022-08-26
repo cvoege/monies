@@ -1,5 +1,6 @@
 # TODO
 
+- make sure 401k match doesn't go over max?
 - income max in traditional IRA
 - age 50 or older limits
 - other types of state taxes (with brackets and different types of deductions)
