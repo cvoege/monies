@@ -45,7 +45,7 @@ export const NumberInput = ({ onChange, value, min, max, ...basicProps }: Number
   const realOnChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const baseStringValue = event.target.value;
-      const baseNumberValue = parseFloat(baseStringValue.replaceAll(/,\$/g, ''));
+      const baseNumberValue = parseFloat(baseStringValue.replaceAll(/[,$\s]/g, ''));
       const newNumberValue = Number.isNaN(baseNumberValue)
         ? null
         : clamp({ value: baseNumberValue, min, max });
