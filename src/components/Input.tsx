@@ -45,10 +45,12 @@ export const NumberInput = ({ onChange, value, min, max, ...basicProps }: Number
   const realOnChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const baseStringValue = event.target.value;
-      const baseNumberValue = parseFloat(baseStringValue.replaceAll(/[,$\s]/g, ''));
+      const trimmedStringValue = baseStringValue.replaceAll(/[,$\s]/g, '');
+      const baseNumberValue = parseFloat(trimmedStringValue);
       const newNumberValue = Number.isNaN(baseNumberValue)
         ? null
         : clamp({ value: baseNumberValue, min, max });
+      console.log({baseStringValue, trimmedStringValue, baseNumberValue, newNumberValue})
       numberValueRef.current = newNumberValue;
       const newStringValue =
         typeof newNumberValue === 'number' && newNumberValue !== baseNumberValue
