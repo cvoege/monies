@@ -50,7 +50,6 @@ export const NumberInput = ({ onChange, value, min, max, ...basicProps }: Number
       const newNumberValue = Number.isNaN(baseNumberValue)
         ? null
         : clamp({ value: baseNumberValue, min, max });
-      console.log({baseStringValue, trimmedStringValue, baseNumberValue, newNumberValue})
       numberValueRef.current = newNumberValue;
       const newStringValue =
         typeof newNumberValue === 'number' && newNumberValue !== baseNumberValue

@@ -195,6 +195,30 @@ export const InvestmentZone = () => {
               </TableRow>
             );
           })}
+          <TableRow>
+            <TableEntry>
+              Total
+            </TableEntry>
+            <TableEntry>Total</TableEntry>
+            <TableEntry>Total</TableEntry>
+            {accounts.map((account) => {
+              const value = fullInvestmentDetails.reduce((acc, investment) => acc + (investmentIdToAccountIdToBalance[investment.id]?.[account.id]?.value || 0), 0);
+              return (
+                <TableEntry key={account.id}>
+                  {formatDollars(value)}
+                </TableEntry>
+              );
+            })}
+            <TableEntry>{formatDollars(fullInvestmentDetails.reduce((acc, investment) => acc + investment.currentInvestmentValue, 0))}</TableEntry>
+            <TableEntry>
+              100%
+            </TableEntry>
+            <TableEntry>-</TableEntry>
+            <TableEntry>-</TableEntry>
+            <TableEntry>-</TableEntry>
+            <TableEntry>-</TableEntry>
+            <TableEntry>Actions</TableEntry>
+          </TableRow>
         </TableBody>
       </Table>
 
