@@ -1,9 +1,11 @@
+import { defaultUserData, getActions, useUserData } from 'src/modules/Firebase';
 import { NumberInput } from '../components/Input';
 import { SelectInput } from '../components/SelectInput';
 import { RETIREMENT_CONTRIBUTION_MAXES } from '../modules/RetirementAccount';
-import { useStore, actions } from '../modules/Store';
 
 export const RetirementAccountZone = () => {
+  const { userData, setUserData } = useUserData();
+
   const {
     retirementAccountInfo: {
       hsaContribution,
@@ -16,10 +18,16 @@ export const RetirementAccountZone = () => {
       my401kContributionType,
     },
     people,
-  } = useStore((s) => ({ retirementAccountInfo: s.retirementAccountInfo, people: s.people }), []);
+  } = userData || defaultUserData;
+
+  const actions = getActions(userData || defaultUserData, setUserData);
 
   const filingStatus = people.length === 1 ? 'single' : 'joint';
   const maxes = RETIREMENT_CONTRIBUTION_MAXES[filingStatus];
+
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>

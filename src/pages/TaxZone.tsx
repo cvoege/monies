@@ -1,5 +1,5 @@
+import { defaultUserData, useUserData } from 'src/modules/Firebase';
 import { formatDollars, formatPercentage } from '../modules/String';
-import { useStore } from '../modules/Store';
 import { US_STANDARD_TAX_SYSTEM } from '../modules/USTaxSystem';
 import {
   Table,
@@ -19,15 +19,14 @@ import {
 } from 'src/modules/Income';
 
 export const TaxZone = () => {
-  const { people, incomes, retirementAccountInfo, w2PaycheckFrequency } = useStore(
-    (s) => ({
-      people: s.people,
-      incomes: s.incomes,
-      retirementAccountInfo: s.retirementAccountInfo,
-      w2PaycheckFrequency: s.w2PaycheckFrequency,
-    }),
-    [],
-  );
+  const { userData } = useUserData();
+
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
+  const { people, incomes, retirementAccountInfo, w2PaycheckFrequency } =
+    userData || defaultUserData;
+
   const taxSystem = US_STANDARD_TAX_SYSTEM;
   const fullTaxInfo = getFullTaxInfo({ incomes, people, retirementAccountInfo, taxSystem });
   const {

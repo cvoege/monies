@@ -9,22 +9,19 @@ import {
   TableBody,
   TableEntry,
 } from 'src/components/Table';
+import { defaultUserData, getActions, useUserData } from 'src/modules/Firebase';
 import { Account, Balance, Investment } from 'src/modules/Investment';
-import { actions, useStore } from 'src/modules/Store';
 import { formatDollars, formatPercentage } from 'src/modules/String';
 
 type BalanceMap = Record<Investment['id'], Record<Account['id'], Balance>>;
 
 export const InvestmentZone = () => {
-  const { investments, accounts, balances, newInvestmentValue } = useStore(
-    (s) => ({
-      investments: s.investments,
-      balances: s.balances,
-      accounts: s.accounts,
-      newInvestmentValue: s.newInvestmentValue,
-    }),
-    [],
-  );
+  const { userData, setUserData } = useUserData();
+
+  const { balances, investments, accounts, newInvestmentValue } = userData || defaultUserData;
+
+  const actions = getActions(userData || defaultUserData, setUserData);
+
   const investmentIdToAccountIdToBalance: BalanceMap = useMemo(() => {
     const result: BalanceMap = {};
     balances.forEach((balance) => {
@@ -100,6 +97,10 @@ export const InvestmentZone = () => {
       };
     });
   }, [investmentDetails, newInvestmentValue]);
+
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
@@ -196,23 +197,26 @@ export const InvestmentZone = () => {
             );
           })}
           <TableRow>
-            <TableEntry>
-              Total
-            </TableEntry>
+            <TableEntry>Total</TableEntry>
             <TableEntry>Total</TableEntry>
             <TableEntry>Total</TableEntry>
             {accounts.map((account) => {
-              const value = fullInvestmentDetails.reduce((acc, investment) => acc + (investmentIdToAccountIdToBalance[investment.id]?.[account.id]?.value || 0), 0);
-              return (
-                <TableEntry key={account.id}>
-                  {formatDollars(value)}
-                </TableEntry>
+              const value = fullInvestmentDetails.reduce(
+                (acc, investment) =>
+                  acc + (investmentIdToAccountIdToBalance[investment.id]?.[account.id]?.value || 0),
+                0,
               );
+              return <TableEntry key={account.id}>{formatDollars(value)}</TableEntry>;
             })}
-            <TableEntry>{formatDollars(fullInvestmentDetails.reduce((acc, investment) => acc + investment.currentInvestmentValue, 0))}</TableEntry>
             <TableEntry>
-              100%
+              {formatDollars(
+                fullInvestmentDetails.reduce(
+                  (acc, investment) => acc + investment.currentInvestmentValue,
+                  0,
+                ),
+              )}
             </TableEntry>
+            <TableEntry>100%</TableEntry>
             <TableEntry>-</TableEntry>
             <TableEntry>-</TableEntry>
             <TableEntry>-</TableEntry>

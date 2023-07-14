@@ -1,13 +1,17 @@
 import { SelectInput } from 'src/components/SelectInput';
 import { paycheckFrequencyOptions } from 'src/modules/Income';
 import { TextInput } from '../components/Input';
-import { useStore, actions } from '../modules/Store';
+import { getActions, useUserData } from 'src/modules/Firebase';
 
 export const PeopleZone = () => {
-  const { people, w2PaycheckFrequency } = useStore(
-    (s) => ({ people: s.people, w2PaycheckFrequency: s.w2PaycheckFrequency }),
-    [],
-  );
+  const { userData, setUserData } = useUserData();
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
+  const actions = getActions(userData, setUserData);
+
+  const { people, w2PaycheckFrequency } = userData;
+
   return (
     <div>
       <h1>People</h1>

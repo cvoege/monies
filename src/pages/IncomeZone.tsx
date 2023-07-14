@@ -1,4 +1,3 @@
-import { useStore, actions } from '../modules/Store';
 import { NumberInput, TextInput } from '../components/Input';
 import { SelectInput } from '../components/SelectInput';
 import {
@@ -12,9 +11,17 @@ import {
   getCombinedTotalIncome,
 } from '../modules/Income';
 import { formatDollars } from '../modules/String';
+import { getActions, useUserData } from 'src/modules/Firebase';
 
 export const IncomeZone = () => {
-  const { incomes, people } = useStore((s) => ({ incomes: s.incomes, people: s.people }), []);
+  const { userData, setUserData } = useUserData();
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
+
+  const { people, incomes } = userData;
+
+  const actions = getActions(userData, setUserData);
 
   const totalTaxable = getCombinedTaxableIncome(incomes);
   const totalCompanyContribution = getCombinedCompanyContribution(incomes);
