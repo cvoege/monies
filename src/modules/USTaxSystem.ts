@@ -174,7 +174,7 @@ export const US_STANDARD_TAX_SYSTEM: TaxSystem = {
       type: 'capped-per-person',
       percentageRate: 6.2,
       affectedByDeductions: false,
-      maximumTaxableAmount: 142800,
+      maximumTaxableAmount: 160200,
     },
     {
       id: 'medicare-tax',
